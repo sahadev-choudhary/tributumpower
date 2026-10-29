@@ -4,7 +4,7 @@ import Image from "next/image";
 
 export default function Hero() {
   return (
-    <section className="relative min-h-[90vh] lg:min-h-screen flex items-center justify-center pt-24 pb-8 sm:pb-12 lg:pt-24 lg:pb-10 px-4 sm:px-6 lg:px-8 overflow-hidden bg-slate-950">
+    <section className="relative min-h-screen min-h-[100dvh] w-full flex items-center justify-center pt-20 pb-10 sm:pt-24 sm:pb-12 px-4 sm:px-6 lg:px-8 overflow-hidden bg-slate-950">
       
       {/* ── BACKGROUND VIDEO LAYER (100% FULL VISIBILITY) ───────────────── */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
@@ -38,7 +38,7 @@ export default function Hero() {
         <div className="grid lg:grid-cols-12 gap-6 lg:gap-8 items-center">
           
           {/* Left Column: Bold, balanced copy utilizing horizontal space */}
-          <div className="lg:col-span-7 text-center lg:text-left space-y-4 sm:space-y-5">
+          <div className="lg:col-span-7 text-center lg:text-left space-y-3.5 sm:space-y-5">
             
             {/* Positive Mission Badge */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/20 shadow-xs">
@@ -49,19 +49,19 @@ export default function Hero() {
             </div>
 
             {/* Core Headline */}
-            <h1 className="text-3xl sm:text-5xl lg:text-[3.25rem] xl:text-6xl font-black tracking-tight text-white leading-[1.12] drop-shadow-md">
+            <h1 className="text-2xl sm:text-5xl lg:text-[3.25rem] xl:text-6xl font-black tracking-tight text-white leading-[1.15] drop-shadow-md">
               A Better Way to Breathe.
               <br />
               <span className="text-emerald-400 drop-shadow-sm">A Smarter Way to Build.</span>
             </h1>
 
             {/* Short, White 2-Sentence Description */}
-            <p className="text-sm sm:text-base lg:text-lg text-white/90 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-normal drop-shadow-sm">
+            <p className="text-xs sm:text-base lg:text-lg text-white/90 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-normal drop-shadow-sm">
               <strong className="text-white font-semibold">AtmosPOLE™</strong> replaces ordinary streetlights with solar-powered smart infrastructure that actively cleans urban air. It combines micro-mist smog suppression with 24/7 CCTV security and zero-grid roadway illumination.
             </p>
 
             {/* Key Action Buttons — Both 100% visible in full hero section above the fold */}
-            <div className="pt-1 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
+            <div className="pt-1 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-2.5 sm:gap-3">
               <a
                 href="#features"
                 className="w-full sm:w-auto px-7 py-3 rounded-full bg-[#c8102e] hover:bg-[#b00d27] text-white text-sm font-semibold tracking-wide transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 group"
@@ -80,17 +80,17 @@ export default function Hero() {
             </div>
 
             {/* 3 Crisp Highlight Badges — styled for dark background video */}
-            <div className="pt-4 sm:pt-5 grid grid-cols-3 gap-2 sm:gap-6 border-t border-white/20 max-w-xl mx-auto lg:mx-0">
+            <div className="pt-3.5 sm:pt-5 grid grid-cols-3 gap-2 sm:gap-6 border-t border-white/20 max-w-xl mx-auto lg:mx-0">
               <div className="space-y-0.5">
-                <div className="text-lg sm:text-2xl font-black text-white drop-shadow-sm">100%</div>
+                <div className="text-base sm:text-2xl font-black text-white drop-shadow-sm">100%</div>
                 <div className="text-[10px] sm:text-xs text-white/80 font-medium leading-tight drop-shadow-xs">Solar Self-Powered</div>
               </div>
               <div className="space-y-0.5 border-x border-white/20 px-2 sm:px-4">
-                <div className="text-lg sm:text-2xl font-black text-emerald-400 drop-shadow-sm">PM2.5</div>
+                <div className="text-base sm:text-2xl font-black text-emerald-400 drop-shadow-sm">PM2.5</div>
                 <div className="text-[10px] sm:text-xs text-white/80 font-medium leading-tight drop-shadow-xs">Active Mist Capture</div>
               </div>
               <div className="space-y-0.5">
-                <div className="text-lg sm:text-2xl font-black text-rose-400 drop-shadow-sm">0-Grid</div>
+                <div className="text-base sm:text-2xl font-black text-rose-400 drop-shadow-sm">0-Grid</div>
                 <div className="text-[10px] sm:text-xs text-white/80 font-medium leading-tight drop-shadow-xs">Zero Power Drain</div>
               </div>
             </div>
