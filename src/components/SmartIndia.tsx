@@ -54,8 +54,8 @@ export default function SmartIndia() {
           <div className="lg:col-span-6 relative rounded-3xl overflow-hidden shadow-2xl border border-slate-200 group">
             <div className="relative w-full h-[380px] sm:h-[460px]">
               <Image
-                src="/atmospole-street.jpg"
-                alt="AtmosPOLE™ deployed in active Indian boulevard with fountain and green median"
+                src="/image/Atmos_closeup.jpg"
+                alt="AtmosPOLE™ High-Definition Closeup and Field Deployment View"
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 priority
@@ -66,10 +66,10 @@ export default function SmartIndia() {
             <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md rounded-2xl p-4 border border-white/60 shadow-lg flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold block">
-                  Active Deployment View
+                  High-Resolution Engineering View
                 </span>
                 <span className="text-xs font-bold text-slate-900">
-                  Urban Boulevard Installation with Water Mist Cleanse
+                  AtmosPOLE™ Architectural Close-up & Active Misting
                 </span>
               </div>
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
