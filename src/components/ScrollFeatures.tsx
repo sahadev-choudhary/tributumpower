@@ -13,7 +13,7 @@ interface FeatureStage {
   badgeText: string;
   description: string;
   highlightText: string;
-  // Camera transform parameters on the 422x1024 pole image
+  // Precise percentage coordinates on the 422x1024 pole image
   originX: number; // percentage (0 - 100)
   originY: number; // percentage (0 - 100)
   scaleDesktop: number;
@@ -37,30 +37,30 @@ const STAGES: FeatureStage[] = [
     highlightText: "100% self-powered by daylight with integrated overnight battery reserve",
     originX: 50,
     originY: 4,
-    scaleDesktop: 2.6,
-    scaleMobile: 2.1,
+    scaleDesktop: 2.5,
+    scaleMobile: 2.0,
     reticleX: 50,
     reticleY: 4,
-    reticleLabel: "Crown Solar Panel",
+    reticleLabel: "Crown Solar Array",
   },
   {
-    id: "lamp-right",
+    id: "luminaire",
     stepNum: "02",
     category: "STREET ILLUMINATION",
-    title: "Right LED Road Luminaire",
+    title: "High-Lumen Optical LED Luminaire",
     accent: "#ca8a04",
     badgeBg: "bg-yellow-100",
     badgeText: "text-yellow-800",
     description:
-      "Cantilevered roadway luminaires feature high-output optical LED clusters designed to provide wide, uniform carriageway and sidewalk coverage, replacing standard streetlights 1-to-1.",
+      "Cantilevered roadway luminaire features high-output optical LED clusters engineered for wide, uniform carriageway and pedestrian coverage, replacing standard streetlights 1-to-1.",
     highlightText: "Full roadway illumination standards powered entirely by clean solar energy",
-    originX: 80,
-    originY: 10,
-    scaleDesktop: 2.7,
-    scaleMobile: 2.2,
-    reticleX: 78,
-    reticleY: 10,
-    reticleLabel: "Right LED Luminaire",
+    originX: 76,
+    originY: 10.2,
+    scaleDesktop: 2.6,
+    scaleMobile: 2.1,
+    reticleX: 76,
+    reticleY: 10.2,
+    reticleLabel: "Roadway LED Luminaire",
   },
   {
     id: "cctv",
@@ -75,14 +75,14 @@ const STAGES: FeatureStage[] = [
     highlightText: "Direct feed integration for Smart City Command Centres (ICCC) and traffic safety",
     originX: 50,
     originY: 10,
-    scaleDesktop: 2.9,
-    scaleMobile: 2.4,
+    scaleDesktop: 2.8,
+    scaleMobile: 2.3,
     reticleX: 50,
     reticleY: 9.8,
     reticleLabel: "HD Security Camera",
   },
   {
-    id: "mist-left",
+    id: "mist",
     stepNum: "04",
     category: "AIR PURIFICATION",
     title: "Active Mist Smog Suppression",
@@ -92,12 +92,12 @@ const STAGES: FeatureStage[] = [
     description:
       "Micro-fine mist nozzles atomize water droplets into the air. These microscopic droplets collide with toxic PM2.5 and PM10 smog particles, weighing them down and washing the air clean right where citizens breathe.",
     highlightText: "Chemical-free particulate knock-down active on both sides of the pole",
-    originX: 18,
-    originY: 28,
-    scaleDesktop: 2.7,
-    scaleMobile: 2.2,
-    reticleX: 16,
-    reticleY: 28,
+    originX: 23,
+    originY: 27,
+    scaleDesktop: 2.6,
+    scaleMobile: 2.1,
+    reticleX: 23,
+    reticleY: 27,
     reticleLabel: "Mist Suppression Nozzles",
   },
   {
@@ -112,7 +112,7 @@ const STAGES: FeatureStage[] = [
       "Dual optical laser particulate sensors measure air quality in real time: tracking incoming ambient polluted air vs. the purified air after misting, streaming verified telemetry every 5 minutes.",
     highlightText: "Uncompromised transparency: ambient intake vs. clean treated output",
     originX: 50,
-    originY: 23,
+    originY: 22,
     scaleDesktop: 2.5,
     scaleMobile: 2.0,
     reticleX: 50,
@@ -131,11 +131,11 @@ const STAGES: FeatureStage[] = [
       "A tall, sunlight-readable portrait screen displays live PM2.5 and PM10 numbers, the Air Pulse™ Index, and total cubic feet of cleaned air — giving every citizen direct awareness without needing an app.",
     highlightText: "Real-time contrast: Ambient Unhealthy (125) vs. Treated Clean (4.16)",
     originX: 50,
-    originY: 50,
-    scaleDesktop: 2.1,
+    originY: 51,
+    scaleDesktop: 2.2,
     scaleMobile: 1.8,
     reticleX: 50,
-    reticleY: 48,
+    reticleY: 51,
     reticleLabel: "Live Public Display",
   },
   {
@@ -241,24 +241,21 @@ export default function ScrollFeatures() {
 
       const rect = el.getBoundingClientRect();
       const windowH = window.innerHeight;
-      // Section is active if pinned or taking up the screen
       const isPinned = rect.top <= 15 && rect.bottom >= windowH - 15;
       if (!isPinned) return;
 
       const currentY = e.touches[0].clientY;
       const currentX = e.touches[0].clientX;
-      const diffY = touchStartYRef.current - currentY; // positive = swipe up (scrolling down)
+      const diffY = touchStartYRef.current - currentY; // positive = swipe up (scroll down)
       const diffX = (touchStartXRef.current ?? currentX) - currentX;
 
-      // Only handle vertical swipes
       if (Math.abs(diffX) > Math.abs(diffY)) return;
 
       const now = Date.now();
 
       if (diffY > 18) {
-        // Swiping UP -> advancing to next feature
+        // Swiping UP -> next feature
         if (activeIdxRef.current < STAGES.length - 1) {
-          // MANDATE: Lock the screen! Do not let it scroll past!
           if (e.cancelable) e.preventDefault();
           if (now - lastStepTimeRef.current > COOLDOWN_MS) {
             lastStepTimeRef.current = now;
@@ -266,11 +263,9 @@ export default function ScrollFeatures() {
             jumpToStage(activeIdxRef.current + 1);
           }
         }
-        // If at stage 07 (last feature), native scroll proceeds down to next section
       } else if (diffY < -18) {
-        // Swiping DOWN -> going back to previous feature
+        // Swiping DOWN -> previous feature
         if (activeIdxRef.current > 0) {
-          // MANDATE: Lock the screen! Step backward!
           if (e.cancelable) e.preventDefault();
           if (now - lastStepTimeRef.current > COOLDOWN_MS) {
             lastStepTimeRef.current = now;
@@ -278,7 +273,6 @@ export default function ScrollFeatures() {
             jumpToStage(activeIdxRef.current - 1);
           }
         }
-        // If at stage 01, native scroll proceeds up to previous section
       }
     };
 
@@ -317,7 +311,6 @@ export default function ScrollFeatures() {
       }
     };
 
-    // Attach non-passive listeners to guarantee preventDefault works
     stickyEl.addEventListener("touchstart", onTouchStart, { passive: true });
     stickyEl.addEventListener("touchmove", onTouchMove, { passive: false });
     stickyEl.addEventListener("touchend", onTouchEnd, { passive: true });
@@ -339,10 +332,9 @@ export default function ScrollFeatures() {
       ref={containerRef}
       id="features"
       className="relative bg-gradient-to-b from-slate-50 via-sky-50/20 to-white"
-      /* Calibrated track locks the section on screen across all 7 stages */
       style={{ height: "420vh" }}
     >
-      {/* ── STICKY VIEWPORT: Remains pinned to the screen throughout all 7 stages ── */}
+      {/* ── STICKY VIEWPORT: Pinned on screen throughout all 7 stages ── */}
       <div
         ref={stickyRef}
         className="sticky top-0 h-screen w-full overflow-hidden flex flex-col justify-between py-3 sm:py-5 px-4 sm:px-8 lg:px-12 select-none"
@@ -390,108 +382,106 @@ export default function ScrollFeatures() {
           </div>
         </div>
 
-        {/* ── CENTRAL STAGE: TWO SEPARATE GRID COLUMNS (POLE BESIDE TEXT — NEVER OVERLAPPING) ── */}
+        {/* ── CENTRAL STAGE: TWO SEPARATE GRID COLUMNS (POLE BESIDE TEXT) ── */}
         <div className="relative z-20 flex-1 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6 lg:gap-10 items-center my-auto overflow-hidden">
           
           {/* ── COLUMN 1 (Left 7 Cols on Desktop / Top Half on Mobile): THE POLE ── */}
           <div className="lg:col-span-7 h-[42vh] sm:h-[48vh] lg:h-[72vh] w-full flex items-center justify-center relative overflow-hidden bg-white/40 rounded-2xl sm:rounded-3xl border border-slate-200/60 shadow-inner">
             
-            {/* The Moving Pole Element — Zoom and Origin Shift */}
+            {/* Direct aspect-ratio Pole Wrapper — 100% 1-to-1 coordinate alignment */}
             <div
-              className="relative w-full h-full flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
+              className="relative h-[90%] max-w-[90%] aspect-[422/1024] flex items-center justify-center filter drop-shadow-[0_20px_35px_rgba(15,23,42,0.18)] transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
               style={{
                 transformOrigin: `${current.originX}% ${current.originY}%`,
                 transform: `scale(${activeScale})`,
               }}
             >
-              <div className="relative w-36 sm:w-48 md:w-56 lg:w-72 h-[88%] flex items-center justify-center filter drop-shadow-[0_20px_35px_rgba(15,23,42,0.18)]">
-                <Image
-                  src="/atmospole-studio.png"
-                  alt="AtmosPOLE™ Smart Urban Infrastructure"
-                  width={422}
-                  height={1024}
-                  priority
-                  className="w-full h-full object-contain"
-                />
+              <Image
+                src="/atmospole-studio.png"
+                alt="AtmosPOLE™ Smart Urban Infrastructure"
+                fill
+                priority
+                sizes="(max-width: 1024px) 50vw, 30vw"
+                className="object-contain"
+              />
 
-                {/* Reticle / Target ring on the specific component */}
-                {current.reticleX !== undefined && current.reticleY !== undefined && current.id !== "full-pole" && (
-                  <div
-                    className="absolute pointer-events-none transition-all duration-700 ease-out"
-                    style={{
-                      top: `${current.reticleY}%`,
-                      left: `${current.reticleX}%`,
-                      transform: "translate(-50%, -50%)",
-                    }}
+              {/* Reticle / Target ring on the specific component */}
+              {current.reticleX !== undefined && current.reticleY !== undefined && current.id !== "full-pole" && (
+                <div
+                  className="absolute pointer-events-none transition-all duration-700 ease-out"
+                  style={{
+                    top: `${current.reticleY}%`,
+                    left: `${current.reticleX}%`,
+                    transform: "translate(-50%, -50%)",
+                  }}
+                >
+                  <span
+                    className="absolute -inset-3.5 rounded-full animate-ping opacity-75"
+                    style={{ backgroundColor: current.accent }}
+                  />
+                  <span
+                    className="relative block w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 bg-white/95 shadow-md flex items-center justify-center"
+                    style={{ borderColor: current.accent }}
                   >
                     <span
-                      className="absolute -inset-3.5 rounded-full animate-ping opacity-75"
+                      className="w-2 h-2 rounded-full"
                       style={{ backgroundColor: current.accent }}
                     />
-                    <span
-                      className="relative block w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 bg-white/95 shadow-md flex items-center justify-center"
-                      style={{ borderColor: current.accent }}
-                    >
-                      <span
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: current.accent }}
-                      />
-                    </span>
-                  </div>
-                )}
+                  </span>
+                </div>
+              )}
 
-                {/* CCTV Scan Line / Pulse Glow when CCTV Stage is Active */}
-                {current.id === "cctv" && (
-                  <div
-                    className="absolute top-[8%] left-[38%] right-[38%] h-[32px] rounded-full pointer-events-none opacity-60 animate-pulse"
-                    style={{
-                      boxShadow: "0 0 25px rgba(79, 70, 229, 0.8)",
-                    }}
-                  />
-                )}
+              {/* CCTV Scan Line / Pulse Glow when CCTV Stage is Active */}
+              {current.id === "cctv" && (
+                <div
+                  className="absolute top-[8.5%] left-[36%] right-[36%] h-[24px] rounded-full pointer-events-none opacity-60 animate-pulse"
+                  style={{
+                    boxShadow: "0 0 25px rgba(79, 70, 229, 0.8)",
+                  }}
+                />
+              )}
 
-                {/* Animated Mist Sprays when Left Mist Stage is Active */}
-                {current.id === "mist-left" && (
-                  <div className="absolute inset-0 pointer-events-none">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div
-                        key={i}
-                        className="absolute rounded-full blur-xs"
-                        style={{
-                          width: `${26 + i * 8}px`,
-                          height: "7px",
-                          background: "rgba(2, 132, 199, 0.45)",
-                          top: `${26 + i * 4}%`,
-                          left: "-22%",
-                          animation: `mistDriftL 1.8s infinite ease-out`,
-                        }}
-                      />
-                    ))}
-                  </div>
-                )}
+              {/* Animated Mist Sprays when Mist Stage is Active */}
+              {current.id === "mist" && (
+                <div className="absolute inset-0 pointer-events-none">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div
+                      key={i}
+                      className="absolute rounded-full blur-xs"
+                      style={{
+                        width: `${26 + i * 8}px`,
+                        height: "7px",
+                        background: "rgba(2, 132, 199, 0.45)",
+                        top: `${24 + i * 3}%`,
+                        left: "-18%",
+                        animation: `mistDriftL 1.8s infinite ease-out`,
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
 
-                {/* LED Beam Glow when Right Lamp Stage is Active */}
-                {current.id === "lamp-right" && (
-                  <div
-                    className="absolute top-[8%] right-[-35%] w-[220px] h-[220px] pointer-events-none opacity-50 blur-xl"
-                    style={{
-                      background:
-                        "radial-gradient(ellipse at 50% 0%, rgba(234, 179, 8, 0.5) 0%, transparent 70%)",
-                    }}
-                  />
-                )}
+              {/* LED Beam Glow when Luminaire Stage is Active */}
+              {current.id === "luminaire" && (
+                <div
+                  className="absolute top-[8%] right-[-20%] w-[180px] h-[180px] pointer-events-none opacity-50 blur-xl"
+                  style={{
+                    background:
+                      "radial-gradient(ellipse at 50% 0%, rgba(234, 179, 8, 0.6) 0%, transparent 70%)",
+                  }}
+                />
+              )}
 
-                {/* Solar Irradiance Glow when Solar Stage is Active */}
-                {current.id === "solar" && (
-                  <div
-                    className="absolute -top-[15%] left-[-20%] right-[-20%] h-[130px] pointer-events-none opacity-50 blur-lg"
-                    style={{
-                      background:
-                        "radial-gradient(ellipse at 50% 50%, rgba(245, 158, 11, 0.6) 0%, transparent 60%)",
-                    }}
-                  />
-                )}
-              </div>
+              {/* Solar Irradiance Glow when Solar Stage is Active */}
+              {current.id === "solar" && (
+                <div
+                  className="absolute -top-[12%] left-[10%] right-[10%] h-[90px] pointer-events-none opacity-50 blur-lg"
+                  style={{
+                    background:
+                      "radial-gradient(ellipse at 50% 50%, rgba(245, 158, 11, 0.6) 0%, transparent 60%)",
+                  }}
+                />
+              )}
             </div>
 
             {/* Tag overlay for active component */}
@@ -500,7 +490,7 @@ export default function ScrollFeatures() {
             </div>
           </div>
 
-          {/* ── COLUMN 2 (Right 5 Cols on Desktop / Bottom Half on Mobile): THE TEXT (BESIDE THE POLE) ── */}
+          {/* ── COLUMN 2 (Right 5 Cols on Desktop / Bottom Half on Mobile): THE TEXT ── */}
           <div className="lg:col-span-5 w-full flex flex-col justify-center">
             
             <div
