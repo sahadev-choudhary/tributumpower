@@ -3,231 +3,58 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 
 // ── CONFIGURATION ───────────────────────────────────────────────────────────
-const TOTAL_FRAMES = 480;
-const FRAME_WIDTH = 1280;
-const FRAME_HEIGHT = 720;
 const SCROLL_DISTANCE_VH = 400; // Physical scroll track height in vh
-const MAX_CACHE_SIZE = 120; // Bounded in-memory frame cache
-const CONCURRENT_DOWNLOADS = 8;
-
-const getFrameUrl = (index: number): string => {
-  const clamped = Math.max(0, Math.min(TOTAL_FRAMES - 1, index));
-  const pad = String(clamped + 1).padStart(5, "0");
-  return `/Pole Sequence/${pad}.jpg`;
-};
+const VIDEO_SRC = "/video/pole-sequence.mp4";
 
 export default function ScrollFeatures() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const [hasVideo, setHasVideo] = useState<boolean>(false);
-  const [isMobile, setIsMobile] = useState<boolean>(false);
-  const [initialLoaded, setInitialLoaded] = useState<boolean>(false);
+  const [progress, setProgress] = useState<number>(0);
+  const [videoReady, setVideoReady] = useState<boolean>(false);
+  const [duration, setDuration] = useState<number>(20);
 
-  // Playhead & caching refs
-  const currentFrameRef = useRef<number>(0);
-  const targetFrameRef = useRef<number>(0);
-  const activeDownloadsRef = useRef<Set<number>>(new Set());
-  const imageCacheRef = useRef<Map<number, HTMLImageElement>>(new Map());
-  const cacheOrderRef = useRef<number[]>([]);
-  const lastDrawnFrameRef = useRef<number>(-1);
+  // Playhead interpolation refs
+  const targetTimeRef = useRef<number>(0);
+  const currentTimeRef = useRef<number>(0);
+  const isSeekingRef = useRef<boolean>(false);
   const rafIdRef = useRef<number | null>(null);
 
-  // ── DETECT VIEWPORT ───────────────────────────────────────────────────────
+  // ── LOAD & PREPARE VIDEO ──────────────────────────────────────────────────
   useEffect(() => {
-    const checkViewport = () => {
-      setIsMobile(window.innerWidth < 1024 || window.innerHeight > window.innerWidth);
-    };
-    checkViewport();
-    window.addEventListener("resize", checkViewport);
-    return () => window.removeEventListener("resize", checkViewport);
-  }, []);
+    const video = videoRef.current;
+    if (!video) return;
 
-  // ── CHECK IF HIGH-QUALITY VIDEO IS AVAILABLE ──────────────────────────────
-  useEffect(() => {
-    const video = document.createElement("video");
-    video.src = "/video/pole-sequence.mp4";
-    video.onloadedmetadata = () => {
-      if (video.duration > 0) setHasVideo(true);
-    };
-    video.onerror = () => {
-      // Check secondary candidate name
-      const altVideo = document.createElement("video");
-      altVideo.src = "/video/pole.mp4";
-      altVideo.onloadedmetadata = () => {
-        if (altVideo.duration > 0) setHasVideo(true);
-      };
-    };
-  }, []);
+    video.pause();
 
-  // ── LRU IMAGE LOADER (FOR FRAME SEQUENCE FALLBACK) ────────────────────────
-  const requestFrame = useCallback((index: number): Promise<HTMLImageElement | null> => {
-    const cache = imageCacheRef.current;
-    if (cache.has(index)) {
-      const order = cacheOrderRef.current;
-      const idx = order.indexOf(index);
-      if (idx > -1) order.splice(idx, 1);
-      order.push(index);
-      return Promise.resolve(cache.get(index)!);
+    const handleLoadedMetadata = () => {
+      if (video.duration && !isNaN(video.duration)) {
+        setDuration(video.duration);
+      }
+      setVideoReady(true);
+      video.pause();
+      video.currentTime = 0;
+    };
+
+    const handleSeeked = () => {
+      isSeekingRef.current = false;
+    };
+
+    video.addEventListener("loadedmetadata", handleLoadedMetadata);
+    video.addEventListener("seeked", handleSeeked);
+
+    // If already loaded from cache
+    if (video.readyState >= 1) {
+      handleLoadedMetadata();
     }
 
-    if (activeDownloadsRef.current.has(index) || activeDownloadsRef.current.size >= CONCURRENT_DOWNLOADS) {
-      return Promise.resolve(null);
-    }
-
-    activeDownloadsRef.current.add(index);
-
-    return new Promise((resolve) => {
-      const img = new window.Image();
-      img.src = getFrameUrl(index);
-
-      img.onload = () => {
-        activeDownloadsRef.current.delete(index);
-        cache.set(index, img);
-        cacheOrderRef.current.push(index);
-
-        while (cacheOrderRef.current.length > MAX_CACHE_SIZE) {
-          const oldest = cacheOrderRef.current.shift();
-          if (oldest !== undefined && oldest !== 0 && oldest !== Math.round(targetFrameRef.current)) {
-            cache.delete(oldest);
-          }
-        }
-        resolve(img);
-      };
-
-      img.onerror = () => {
-        activeDownloadsRef.current.delete(index);
-        resolve(null);
-      };
-    });
+    return () => {
+      video.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      video.removeEventListener("seeked", handleSeeked);
+    };
   }, []);
 
-  // ── INITIAL PRELOAD (FIRST FRAME + KEYFRAMES) ─────────────────────────────
-  useEffect(() => {
-    if (hasVideo) return;
-
-    const firstImg = new window.Image();
-    firstImg.src = getFrameUrl(0);
-    firstImg.onload = () => {
-      imageCacheRef.current.set(0, firstImg);
-      cacheOrderRef.current.push(0);
-      setInitialLoaded(true);
-    };
-
-    // Preload keyframes across sequence
-    for (let f = 0; f < TOTAL_FRAMES; f += 20) {
-      if (f !== 0) requestFrame(f);
-    }
-  }, [hasVideo, requestFrame]);
-
-  // ── PRELOAD SURROUNDING WINDOW ────────────────────────────────────────────
-  const updatePreloadWindow = useCallback(
-    (centerFrame: number) => {
-      if (hasVideo) return;
-      const preloadRange = isMobile ? 16 : 32;
-      const start = Math.max(0, centerFrame - 8);
-      const end = Math.min(TOTAL_FRAMES - 1, centerFrame + preloadRange);
-
-      for (let i = start; i <= end; i++) {
-        if (!imageCacheRef.current.has(i)) {
-          requestFrame(i);
-        }
-      }
-    },
-    [hasVideo, isMobile, requestFrame]
-  );
-
-  // ── DRAW FRAME ONTO FULL-BLEED CANVAS ─────────────────────────────────────
-  const drawFrameToCanvas = useCallback(
-    (frameIndex: number) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-
-      const ctx = canvas.getContext("2d", { alpha: false });
-      if (!ctx) return;
-
-      const cache = imageCacheRef.current;
-      let img = cache.get(frameIndex);
-
-      if (!img) {
-        let minDist = Infinity;
-        for (const [idx, loadedImg] of cache.entries()) {
-          const dist = Math.abs(idx - frameIndex);
-          if (dist < minDist) {
-            minDist = dist;
-            img = loadedImg;
-          }
-        }
-      }
-
-      if (!img || !img.complete || img.naturalWidth === 0) return;
-
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const displayW = canvas.clientWidth;
-      const displayH = canvas.clientHeight;
-
-      if (displayW === 0 || displayH === 0) return;
-
-      const targetBufferW = Math.round(displayW * dpr);
-      const targetBufferH = Math.round(displayH * dpr);
-
-      if (canvas.width !== targetBufferW || canvas.height !== targetBufferH) {
-        canvas.width = targetBufferW;
-        canvas.height = targetBufferH;
-      }
-
-      ctx.save();
-      ctx.scale(dpr, dpr);
-
-      const naturalW = img.naturalWidth || FRAME_WIDTH;
-      const naturalH = img.naturalHeight || FRAME_HEIGHT;
-
-      if (isMobile) {
-        // Mobile: Zoom in tighter on the central pole
-        const targetAspect = displayW / displayH;
-        let srcW = naturalH * targetAspect * 1.15;
-        let srcH = naturalH;
-
-        if (srcW > naturalW) {
-          srcW = naturalW;
-          srcH = naturalW / targetAspect;
-        }
-
-        const srcX = (naturalW - srcW) / 2;
-        const srcY = (naturalH - srcH) / 2;
-
-        ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, displayW, displayH);
-      } else {
-        // Desktop: Full composition cover
-        const canvasAspect = displayW / displayH;
-        const imgAspect = naturalW / naturalH;
-
-        let drawW = displayW;
-        let drawH = displayH;
-        let offsetX = 0;
-        let offsetY = 0;
-
-        if (canvasAspect > imgAspect) {
-          drawW = displayW;
-          drawH = displayW / imgAspect;
-          offsetY = (displayH - drawH) / 2;
-        } else {
-          drawH = displayH;
-          drawW = displayH * imgAspect;
-          offsetX = (displayW - drawW) / 2;
-        }
-
-        ctx.drawImage(img, 0, 0, naturalW, naturalH, offsetX, offsetY, drawW, drawH);
-      }
-
-      ctx.restore();
-      lastDrawnFrameRef.current = frameIndex;
-    },
-    [isMobile]
-  );
-
-  // ── SCROLL SCRUBBING ──────────────────────────────────────────────────────
+  // ── SCROLL PROGRESS TRACKING ──────────────────────────────────────────────
   const handleScroll = useCallback(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -238,15 +65,13 @@ export default function ScrollFeatures() {
 
     if (scrollableDistance <= 0) return;
 
-    const progress = Math.max(0, Math.min(1, -rect.top / scrollableDistance));
-    targetFrameRef.current = progress * (TOTAL_FRAMES - 1);
+    // Progress from 0 (entry) to 1 (exit)
+    const currentProgress = Math.max(0, Math.min(1, -rect.top / scrollableDistance));
+    setProgress(currentProgress);
 
-    // If using video mode: scrub video.currentTime
-    const video = videoRef.current;
-    if (video && video.duration) {
-      video.currentTime = progress * video.duration;
-    }
-  }, []);
+    // Compute target video timestamp
+    targetTimeRef.current = currentProgress * duration;
+  }, [duration]);
 
   useEffect(() => {
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -254,31 +79,34 @@ export default function ScrollFeatures() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
 
-  // ── ANIMATION RAF LOOP ────────────────────────────────────────────────────
+  // ── BUTTER-SMOOTH RAF SCRUBBING LOOP ──────────────────────────────────────
+  // Uses linear damping (lerp) + seek lock to ensure high-FPS smooth playback
   useEffect(() => {
-    if (hasVideo) return;
-
     let active = true;
 
     const loop = () => {
       if (!active) return;
 
-      const target = targetFrameRef.current;
-      const current = currentFrameRef.current;
-      const diff = target - current;
+      const video = videoRef.current;
+      if (video && videoReady && duration > 0) {
+        const target = targetTimeRef.current;
+        const current = currentTimeRef.current;
+        const diff = target - current;
 
-      if (Math.abs(diff) < 0.04) {
-        currentFrameRef.current = target;
-      } else {
-        currentFrameRef.current += diff * 0.24;
+        // Smooth damping towards target scroll position
+        if (Math.abs(diff) < 0.01) {
+          currentTimeRef.current = target;
+        } else {
+          currentTimeRef.current += diff * 0.22;
+        }
+
+        // Apply to video element when ready to accept next frame
+        if (!isSeekingRef.current && Math.abs(video.currentTime - currentTimeRef.current) > 0.02) {
+          isSeekingRef.current = true;
+          video.currentTime = currentTimeRef.current;
+        }
       }
 
-      const frameToDraw = Math.round(currentFrameRef.current);
-      if (frameToDraw !== lastDrawnFrameRef.current) {
-        drawFrameToCanvas(frameToDraw);
-      }
-
-      updatePreloadWindow(frameToDraw);
       rafIdRef.current = requestAnimationFrame(loop);
     };
 
@@ -288,52 +116,34 @@ export default function ScrollFeatures() {
       active = false;
       if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
     };
-  }, [drawFrameToCanvas, hasVideo, updatePreloadWindow]);
-
-  // ── REDRAW ON RESIZE ──────────────────────────────────────────────────────
-  useEffect(() => {
-    const handleResize = () => {
-      if (!hasVideo) {
-        drawFrameToCanvas(Math.round(currentFrameRef.current));
-      }
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [drawFrameToCanvas, hasVideo]);
+  }, [duration, videoReady]);
 
   return (
     <section
       ref={containerRef}
       id="features"
       className="relative bg-slate-950"
+      /* Calibrated scroll track: ensures cinematic pacing through the sequence */
       style={{ height: `${SCROLL_DISTANCE_VH}vh` }}
     >
-      {/* ── STICKY VIEWPORT: PURE, FULL-SCREEN CINEMATIC CANVAS (ZERO TEXT BOXES) ── */}
-      <div className="sticky top-0 h-screen w-full overflow-hidden select-none bg-slate-950">
+      {/* ── STICKY VIEWPORT: Pinned edge-to-edge full screen ─────────────────── */}
+      <div className="sticky top-0 h-screen w-full overflow-hidden select-none bg-slate-950 flex items-center justify-center">
         
-        {/* VIDEO MODE (Automatically active when /video/pole-sequence.mp4 is present) */}
-        {hasVideo ? (
-          <video
-            ref={videoRef}
-            playsInline
-            muted
-            preload="auto"
-            className="absolute inset-0 w-full h-full object-cover"
-          >
-            <source src="/video/pole-sequence.mp4" type="video/mp4" />
-            <source src="/video/pole.mp4" type="video/mp4" />
-          </video>
-        ) : (
-          /* CANVAS MODE: 100% Edge-to-Edge Frame Sequence */
-          <canvas
-            ref={canvasRef}
-            className="absolute inset-0 w-full h-full block"
-            style={{ willChange: "transform" }}
-          />
-        )}
+        {/* ── HIGH-DEFINITION CINEMATIC VIDEO (SCRUBBED VIA SCROLL) ─────────── */}
+        <video
+          ref={videoRef}
+          src={VIDEO_SRC}
+          playsInline
+          muted
+          preload="auto"
+          disablePictureInPicture
+          disableRemotePlayback
+          /* Desktop: Full composition; Mobile: Zoomed in on pole for immersive close-up */
+          className="w-full h-full object-cover object-center scale-[1.28] sm:scale-100 transition-transform duration-500 will-change-transform"
+        />
 
-        {/* Initial loading placeholder (disappears once Frame 1 is ready) */}
-        {!hasVideo && !initialLoaded && (
+        {/* Loading Spinner until video metadata is loaded */}
+        {!videoReady && (
           <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center text-white z-20">
             <div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin mb-3" />
             <span className="text-xs font-mono tracking-widest uppercase text-slate-400">
@@ -341,6 +151,51 @@ export default function ScrollFeatures() {
             </span>
           </div>
         )}
+
+        {/* Subtle cinematic gradient vignette along top & bottom edges */}
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/60 z-10" />
+
+        {/* ── MINIMAL TELEMETRY HUD (Top-Left) ─────────────────────────────── */}
+        <div className="absolute top-5 left-5 sm:top-7 sm:left-8 z-20 pointer-events-none">
+          <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white/90 shadow-lg">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[10px] sm:text-xs font-mono font-bold tracking-wider uppercase">
+              AtmosPOLE™ Inspection
+            </span>
+            <span className="text-white/30">|</span>
+            <span className="text-[10px] sm:text-xs font-mono text-emerald-400 font-semibold">
+              {Math.round(progress * 100)}%
+            </span>
+          </div>
+        </div>
+
+        {/* ── SCROLL PROMPT (Fades out once user starts scrolling) ──────────── */}
+        <div
+          className={`absolute bottom-8 z-20 pointer-events-none flex flex-col items-center gap-2 text-white/70 transition-opacity duration-500 ${
+            progress > 0.05 ? "opacity-0" : "opacity-100 animate-bounce"
+          }`}
+        >
+          <span className="text-[10px] font-mono tracking-widest uppercase text-white/60">
+            Scroll to explore in 360°
+          </span>
+          <svg className="w-4 h-4 text-emerald-400" viewBox="0 0 16 16" fill="none">
+            <path
+              d="M3 6l5 5 5-5"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+
+        {/* ── RAZOR-THIN EMERALD PROGRESS LINE (Bottom Edge) ────────────────── */}
+        <div className="absolute bottom-0 inset-x-0 h-1 bg-white/10 z-20 pointer-events-none">
+          <div
+            className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-75 ease-out shadow-[0_0_10px_rgba(16,185,129,0.5)]"
+            style={{ width: `${progress * 100}%` }}
+          />
+        </div>
 
       </div>
     </section>
