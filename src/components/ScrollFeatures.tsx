@@ -13,12 +13,9 @@ interface FeatureStage {
   badgeText: string;
   description: string;
   highlightText: string;
-  // Choreography: where does the pole sit, and where is the text?
-  // "center" | "left" (pole on left, text on right) | "right" (pole on right, text on left)
-  layout: "center" | "left" | "right";
-  // Camera transform parameters on the 422x1024 pole image
-  originX: number; // percentage
-  originY: number; // percentage
+  // Precise camera coordinates on the 422x1024 pole image
+  originX: number; // percentage (0 - 100)
+  originY: number; // percentage (0 - 100)
   scaleDesktop: number;
   scaleMobile: number;
   reticleX?: number;
@@ -36,13 +33,12 @@ const STAGES: FeatureStage[] = [
     badgeBg: "bg-amber-100",
     badgeText: "text-amber-800",
     description:
-      "Mounted at the very crown of the AtmosPOLE™, the high-efficiency monocrystalline solar array harvests daylight to power lighting, misting, sensors, and display with zero operating grid electricity cost.",
+      "Mounted at the very crown of the pole, the monocrystalline solar array harvests daylight to power lighting, misting, sensors, and display with zero operating grid electricity cost.",
     highlightText: "100% self-powered by daylight with integrated overnight battery reserve",
-    layout: "center",
     originX: 50,
     originY: 4,
     scaleDesktop: 2.6,
-    scaleMobile: 2.2,
+    scaleMobile: 2.1,
     reticleX: 50,
     reticleY: 4,
     reticleLabel: "Crown Solar Panel",
@@ -56,13 +52,12 @@ const STAGES: FeatureStage[] = [
     badgeBg: "bg-yellow-100",
     badgeText: "text-yellow-800",
     description:
-      "Cantilevered roadway luminaires feature high-output optical LED clusters designed to provide wide, uniform carriageway and pedestrian sidewalk coverage, replacing conventional streetlights 1-to-1.",
-    highlightText: "Full roadway lighting standards powered entirely by clean solar energy",
-    layout: "left", // Pole moves left, text on the right
-    originX: 82,
+      "Cantilevered roadway luminaires feature high-output optical LED clusters designed to provide wide, uniform carriageway and sidewalk coverage, replacing standard streetlights 1-to-1.",
+    highlightText: "Full roadway illumination standards powered entirely by clean solar energy",
+    originX: 80,
     originY: 10,
     scaleDesktop: 2.7,
-    scaleMobile: 2.3,
+    scaleMobile: 2.2,
     reticleX: 78,
     reticleY: 10,
     reticleLabel: "Right LED Luminaire",
@@ -78,11 +73,10 @@ const STAGES: FeatureStage[] = [
     description:
       "Micro-fine mist nozzles atomize water droplets into the air. These microscopic droplets collide with toxic PM2.5 and PM10 smog particles, weighing them down and washing the air clean right where citizens breathe.",
     highlightText: "Chemical-free particulate knock-down active on both sides of the pole",
-    layout: "right", // Pole moves right, text on the left
     originX: 18,
     originY: 28,
     scaleDesktop: 2.7,
-    scaleMobile: 2.3,
+    scaleMobile: 2.2,
     reticleX: 16,
     reticleY: 28,
     reticleLabel: "Mist Suppression Nozzles",
@@ -98,11 +92,10 @@ const STAGES: FeatureStage[] = [
     description:
       "Dual optical laser particulate sensors measure air quality in real time: tracking incoming ambient polluted air vs. the purified air after misting, streaming verified telemetry every 5 minutes.",
     highlightText: "Uncompromised transparency: ambient intake vs. clean treated output",
-    layout: "left", // Pole moves left, text on the right
     originX: 50,
     originY: 23,
     scaleDesktop: 2.5,
-    scaleMobile: 2.1,
+    scaleMobile: 2.0,
     reticleX: 50,
     reticleY: 22,
     reticleLabel: "Intake Sensors & Vents",
@@ -118,10 +111,9 @@ const STAGES: FeatureStage[] = [
     description:
       "A tall, sunlight-readable portrait screen displays live PM2.5 and PM10 numbers, the Air Pulse™ Index, and total cubic feet of cleaned air — giving every citizen direct awareness without needing an app.",
     highlightText: "Real-time contrast: Ambient Unhealthy (125) vs. Treated Clean (4.16)",
-    layout: "right", // Pole moves right, text on the left
     originX: 50,
     originY: 50,
-    scaleDesktop: 2.0,
+    scaleDesktop: 2.1,
     scaleMobile: 1.8,
     reticleX: 50,
     reticleY: 48,
@@ -138,7 +130,6 @@ const STAGES: FeatureStage[] = [
     description:
       "From solar crown and CCTV surveillance down to the rugged bolted base, AtmosPOLE™ consolidates six vital urban capabilities into one elegant architectural column ready for India's 100+ Smart Cities.",
     highlightText: "One standard footprint. Six integrated smart city functions. Zero disruption.",
-    layout: "center", // Pole returns to center, zoomed out completely
     originX: 50,
     originY: 50,
     scaleDesktop: 1.0,
@@ -148,10 +139,9 @@ const STAGES: FeatureStage[] = [
 ];
 
 export default function ScrollFeatures() {
-  const sectionRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [activeIdx, setActiveIdx] = useState<number>(0);
   const [isMobile, setIsMobile] = useState<boolean>(false);
-  const isTransitioningRef = useRef<boolean>(false);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
@@ -160,147 +150,110 @@ export default function ScrollFeatures() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Realtime single-scroll navigation:
-  // 1 scroll gesture = exactly 1 feature advance!
-  // At the boundary (stage 0 scrolling up or stage 5 scrolling down), natural page scrolling continues!
-  useEffect(() => {
-    const el = sectionRef.current;
+  // Natural scroll tracking calibrated for both desktop and mobile:
+  // Container has 360vh height. The sticky section stays locked on screen.
+  // Scrolling naturally advances through points 1 to 6.
+  // Only after point 6 has been completed does the page scroll to the next section!
+  const handleScroll = useCallback(() => {
+    const el = containerRef.current;
     if (!el) return;
 
-    const onWheel = (e: WheelEvent) => {
-      const rect = el.getBoundingClientRect();
-      const inView = rect.top <= 80 && rect.bottom >= window.innerHeight - 80;
+    const rect = el.getBoundingClientRect();
+    const windowH = window.innerHeight;
+    const scrollableDistance = el.offsetHeight - windowH;
+    const currentScrolled = -rect.top;
 
-      if (!inView) return;
+    if (scrollableDistance <= 0) return;
 
-      // Allow natural scroll up when on first stage and scrolling up
-      if (activeIdx === 0 && e.deltaY < 0) return;
-      // Allow natural scroll down when on last stage and scrolling down
-      if (activeIdx === STAGES.length - 1 && e.deltaY > 0) return;
+    // Progress 0 to 1 across the track
+    const progress = Math.max(0, Math.min(1, currentScrolled / scrollableDistance));
+    const total = STAGES.length;
+    const rawIndex = progress * total;
+    const calculatedIndex = Math.min(total - 1, Math.max(0, Math.floor(rawIndex)));
 
-      // Intercept and advance 1 stage in real time
-      e.preventDefault();
+    setActiveIdx(calculatedIndex);
+  }, []);
 
-      if (isTransitioningRef.current) return;
-      if (Math.abs(e.deltaY) < 15) return;
+  useEffect(() => {
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [handleScroll]);
 
-      isTransitioningRef.current = true;
-      if (e.deltaY > 0) {
-        setActiveIdx((prev) => Math.min(STAGES.length - 1, prev + 1));
-      } else {
-        setActiveIdx((prev) => Math.max(0, prev - 1));
-      }
-
-      setTimeout(() => {
-        isTransitioningRef.current = false;
-      }, 500);
-    };
-
-    window.addEventListener("wheel", onWheel, { passive: false });
-    return () => window.removeEventListener("wheel", onWheel);
-  }, [activeIdx]);
-
-  // Touch swipe support for mobile: 1 swipe = 1 feature
-  const touchStartY = useRef<number | null>(null);
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchStartY.current = e.touches[0].clientY;
-  };
-
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartY.current === null) return;
-    const diff = touchStartY.current - e.changedTouches[0].clientY;
-
-    if (Math.abs(diff) > 35) {
-      if (diff > 0 && activeIdx < STAGES.length - 1) {
-        // Swipe up -> next feature
-        setActiveIdx((prev) => Math.min(STAGES.length - 1, prev + 1));
-      } else if (diff < 0 && activeIdx > 0) {
-        // Swipe down -> prev feature
-        setActiveIdx((prev) => Math.max(0, prev - 1));
-      }
-    }
-    touchStartY.current = null;
+  // Jump to specific feature on click
+  const jumpToStage = (idx: number) => {
+    const el = containerRef.current;
+    if (!el) return;
+    const scrollableDistance = el.offsetHeight - window.innerHeight;
+    const targetScroll = el.offsetTop + (idx / (STAGES.length - 1)) * scrollableDistance;
+    window.scrollTo({ top: targetScroll, behavior: "smooth" });
   };
 
   const current = STAGES[activeIdx] || STAGES[0];
   const activeScale = isMobile ? current.scaleMobile : current.scaleDesktop;
 
-  // Calculate pole horizontal translation:
-  // "center" -> 0%
-  // "left"   -> move pole to the left so text fits on the right
-  // "right"  -> move pole to the right so text fits on the left
-  let poleTranslateX = "0%";
-  if (!isMobile) {
-    if (current.layout === "left") poleTranslateX = "-22%";
-    if (current.layout === "right") poleTranslateX = "22%";
-  }
-
   return (
     <section
-      ref={sectionRef}
+      ref={containerRef}
       id="features"
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
-      /* One unified, clean section canvas: no boxed placeholders */
-      className="relative min-h-screen py-8 sm:py-12 px-4 sm:px-8 lg:px-12 bg-gradient-to-b from-slate-50 via-sky-50/20 to-white flex flex-col justify-between overflow-hidden"
+      className="relative bg-gradient-to-b from-slate-50 via-sky-50/20 to-white"
+      /* Calibrated 360vh scroll track: ensures the section stays pinned on screen
+         and mandatorily walks the user through all 6 points on phone and desktop */
+      style={{ height: "360vh" }}
     >
-      {/* Ambient background glow */}
-      <div
-        className="absolute inset-0 pointer-events-none transition-all duration-700 ease-out"
-        style={{
-          background: `radial-gradient(circle 600px at 50% 50%, ${current.accent}12, transparent 70%)`,
-        }}
-      />
-
-      {/* ── TOP HEADER: Milestone tracker & Quick selection ── */}
-      <div className="relative z-30 max-w-7xl mx-auto w-full flex items-center justify-between pb-3 border-b border-slate-200/60">
-        <div className="flex items-center gap-2.5">
-          <span
-            className="w-2.5 h-2.5 rounded-full animate-ping shrink-0"
-            style={{ backgroundColor: current.accent }}
-          />
-          <span className="text-xs font-bold tracking-widest text-slate-700 uppercase">
-            AtmosPOLE™ Inspection · Point {activeIdx + 1} of {STAGES.length}
-          </span>
-        </div>
-
-        {/* Milestone Pills */}
-        <div className="flex items-center gap-1.5">
-          {STAGES.map((s, idx) => (
-            <button
-              key={s.id}
-              onClick={() => setActiveIdx(idx)}
-              aria-label={`Jump to ${s.title}`}
-              className={`transition-all duration-300 rounded-full flex items-center justify-center text-[10px] font-mono font-bold ${
-                idx === activeIdx
-                  ? "w-8 h-6 text-white shadow-xs"
-                  : "w-6 h-6 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60"
-              }`}
-              style={{
-                backgroundColor: idx === activeIdx ? current.accent : "transparent",
-              }}
-            >
-              {s.stepNum}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── UNIFIED STAGE CANVAS: POLE AND TEXT FLOWING SEAMLESSLY (NO BOXES) ── */}
-      <div className="relative z-20 flex-1 max-w-7xl mx-auto w-full flex items-center justify-center my-auto py-4">
+      {/* ── STICKY VIEWPORT: Pinned to screen while user scrolls through the 360vh track ── */}
+      <div className="sticky top-0 h-screen w-full overflow-hidden flex flex-col justify-between py-3 sm:py-6 px-4 sm:px-8 lg:px-12">
         
-        {/* Full-width container where the pole moves left/right and text flows dynamically */}
-        <div className="relative w-full h-[65vh] sm:h-[72vh] flex items-center justify-center">
+        {/* Ambient atmospheric backdrop lighting */}
+        <div
+          className="absolute inset-0 pointer-events-none transition-all duration-700 ease-out"
+          style={{
+            background: `radial-gradient(circle 500px at 45% 50%, ${current.accent}14, transparent 70%),
+                         radial-gradient(circle 450px at 75% 30%, rgba(22, 163, 74, 0.05), transparent 70%)`,
+          }}
+        />
+
+        {/* ── TOP HEADER BAR: Milestone Navigation ── */}
+        <div className="relative z-30 max-w-7xl mx-auto w-full flex items-center justify-between pb-2 sm:pb-3 border-b border-slate-200/70">
+          <div className="flex items-center gap-2">
+            <span
+              className="w-2.5 h-2.5 rounded-full animate-ping shrink-0"
+              style={{ backgroundColor: current.accent }}
+            />
+            <span className="text-[11px] sm:text-xs font-bold tracking-widest text-slate-700 uppercase">
+              AtmosPOLE™ Inspection · Point {activeIdx + 1} of {STAGES.length}
+            </span>
+          </div>
+
+          {/* Quick-select milestone pills */}
+          <div className="flex items-center gap-1 sm:gap-1.5">
+            {STAGES.map((s, idx) => (
+              <button
+                key={s.id}
+                onClick={() => jumpToStage(idx)}
+                aria-label={`Jump to ${s.title}`}
+                className={`transition-all duration-300 rounded-full flex items-center justify-center text-[10px] font-mono font-bold ${
+                  idx === activeIdx
+                    ? "w-7 sm:w-8 h-6 text-white shadow-xs"
+                    : "w-5 sm:w-6 h-6 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60"
+                }`}
+                style={{
+                  backgroundColor: idx === activeIdx ? current.accent : "transparent",
+                }}
+              >
+                {s.stepNum}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── CENTRAL STAGE: TWO SEPARATE GRID COLUMNS (POLE BESIDE TEXT — NEVER OVERLAPPING) ── */}
+        <div className="relative z-20 flex-1 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-10 items-center my-auto overflow-hidden">
           
-          {/* ── THE POLE: Moves Center -> Left -> Right -> Left -> Right -> Center ── */}
-          <div
-            className="absolute inset-0 flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none"
-            style={{
-              transform: `translateX(${poleTranslateX})`,
-            }}
-          >
-            {/* Pole Zoom & Origin Shift */}
+          {/* ── COLUMN 1 (Left 7 Cols on Desktop / Top 50% on Mobile): THE POLE ── */}
+          <div className="lg:col-span-7 h-[46vh] sm:h-[50vh] lg:h-[72vh] w-full flex items-center justify-center relative overflow-hidden bg-white/40 rounded-2xl sm:rounded-3xl border border-slate-200/60 shadow-inner">
+            
+            {/* The Moving Pole Element — Zoom and Origin Shift */}
             <div
               className="relative w-full h-full flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
               style={{
@@ -308,7 +261,7 @@ export default function ScrollFeatures() {
                 transform: `scale(${activeScale})`,
               }}
             >
-              <div className="relative w-40 sm:w-52 md:w-64 lg:w-72 h-[88%] flex items-center justify-center filter drop-shadow-[0_25px_40px_rgba(15,23,42,0.18)]">
+              <div className="relative w-36 sm:w-48 md:w-56 lg:w-72 h-[88%] flex items-center justify-center filter drop-shadow-[0_20px_35px_rgba(15,23,42,0.18)]">
                 <Image
                   src="/atmospole-studio.png"
                   alt="AtmosPOLE™ Smart Urban Infrastructure"
@@ -318,7 +271,7 @@ export default function ScrollFeatures() {
                   className="w-full h-full object-contain"
                 />
 
-                {/* Target reticle directly on the focused component */}
+                {/* Reticle / Target ring on the specific component */}
                 {current.reticleX !== undefined && current.reticleY !== undefined && current.id !== "full-pole" && (
                   <div
                     className="absolute pointer-events-none transition-all duration-700 ease-out"
@@ -352,11 +305,11 @@ export default function ScrollFeatures() {
                         key={i}
                         className="absolute rounded-full blur-xs"
                         style={{
-                          width: `${28 + i * 8}px`,
+                          width: `${26 + i * 8}px`,
                           height: "7px",
                           background: "rgba(2, 132, 199, 0.45)",
                           top: `${26 + i * 4}%`,
-                          left: "-24%",
+                          left: "-22%",
                           animation: `mistDriftL 1.8s infinite ease-out`,
                         }}
                       />
@@ -367,7 +320,7 @@ export default function ScrollFeatures() {
                 {/* LED Beam Glow when Right Lamp Stage is Active */}
                 {current.id === "lamp-right" && (
                   <div
-                    className="absolute top-[8%] right-[-35%] w-[240px] h-[240px] pointer-events-none opacity-50 blur-xl"
+                    className="absolute top-[8%] right-[-35%] w-[220px] h-[220px] pointer-events-none opacity-50 blur-xl"
                     style={{
                       background:
                         "radial-gradient(ellipse at 50% 0%, rgba(234, 179, 8, 0.5) 0%, transparent 70%)",
@@ -378,7 +331,7 @@ export default function ScrollFeatures() {
                 {/* Solar Irradiance Glow when Solar Stage is Active */}
                 {current.id === "solar" && (
                   <div
-                    className="absolute -top-[15%] left-[-20%] right-[-20%] h-[140px] pointer-events-none opacity-50 blur-lg"
+                    className="absolute -top-[15%] left-[-20%] right-[-20%] h-[130px] pointer-events-none opacity-50 blur-lg"
                     style={{
                       background:
                         "radial-gradient(ellipse at 50% 50%, rgba(245, 158, 11, 0.6) 0%, transparent 60%)",
@@ -387,35 +340,28 @@ export default function ScrollFeatures() {
                 )}
               </div>
             </div>
+
+            {/* Tag overlay for active component */}
+            <div className="absolute bottom-3 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full border border-slate-200/80 text-[10px] font-mono font-semibold text-slate-700 shadow-xs">
+              {current.reticleLabel}
+            </div>
           </div>
 
-          {/* ── SEAMLESS FLOATING TEXT (NO PLACEHOLDER BOXES) ── */}
-          {/*
-              Positioning rules:
-              - If current.layout === "left"  -> text sits on the RIGHT
-              - If current.layout === "right" -> text sits on the LEFT
-              - If current.layout === "center" (Solar & Complete Pole) -> text sits beside or below
-              - On mobile -> elegant overlay at bottom with backdrop blur
-          */}
-          <div
-            className={`absolute z-30 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] max-w-md pointer-events-auto ${
-              isMobile
-                ? "bottom-0 inset-x-0 mx-auto px-4"
-                : current.layout === "left"
-                ? "right-4 lg:right-8 top-1/2 -translate-y-1/2 text-left"
-                : current.layout === "right"
-                ? "left-4 lg:left-8 top-1/2 -translate-y-1/2 text-left"
-                : activeIdx === 0
-                ? "right-4 lg:right-12 top-1/2 -translate-y-1/2 text-left"
-                : "right-4 lg:right-12 top-1/2 -translate-y-1/2 text-left"
-            }`}
-          >
+          {/* ── COLUMN 2 (Right 5 Cols on Desktop / Bottom 50% on Mobile): THE TEXT (BESIDE THE POLE) ── */}
+          <div className="lg:col-span-5 w-full flex flex-col justify-center">
+            
             <div
               key={current.id}
-              className="p-4 sm:p-6 rounded-2xl bg-white/70 backdrop-blur-md border border-white/80 shadow-lg"
+              className="p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl bg-white/80 backdrop-blur-md border border-white/90 shadow-xl transition-all duration-500 relative"
             >
+              {/* Decorative top color bar */}
+              <div
+                className="absolute top-0 left-6 right-6 h-1 rounded-b-full transition-colors duration-500"
+                style={{ backgroundColor: current.accent }}
+              />
+
               {/* Category Pill & Step Counter */}
-              <div className="flex items-center gap-2.5 mb-2">
+              <div className="flex items-center justify-between mb-2 sm:mb-3 pt-1">
                 <span
                   className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold tracking-wider uppercase ${current.badgeBg} ${current.badgeText}`}
                 >
@@ -427,18 +373,18 @@ export default function ScrollFeatures() {
               </div>
 
               {/* Title */}
-              <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight leading-snug mb-2">
+              <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight leading-snug mb-2 sm:mb-3">
                 {current.title}
               </h3>
 
               {/* Trimmed Description */}
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">
+              <p className="text-xs sm:text-sm lg:text-base text-slate-600 leading-relaxed mb-3 sm:mb-4">
                 {current.description}
               </p>
 
-              {/* Highlight Pill */}
+              {/* Punchy Highlight Pill */}
               <div
-                className="rounded-xl px-3.5 py-2 flex items-start gap-2 border transition-colors"
+                className="rounded-xl px-3.5 py-2 sm:py-2.5 flex items-start gap-2.5 border transition-colors mb-3 sm:mb-4"
                 style={{
                   backgroundColor: `${current.accent}0d`,
                   borderColor: `${current.accent}25`,
@@ -448,18 +394,20 @@ export default function ScrollFeatures() {
                   className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0"
                   style={{ backgroundColor: current.accent }}
                 />
-                <span className="text-[11px] sm:text-xs font-semibold text-slate-800 leading-snug">
+                <span className="text-xs sm:text-sm font-semibold text-slate-800 leading-snug">
                   {current.highlightText}
                 </span>
               </div>
 
-              {/* Quick Nav Arrows */}
-              <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-200/60 text-xs">
+              {/* Quick Arrow Nav for manual clicking */}
+              <div className="flex items-center justify-between pt-2.5 border-t border-slate-200/80 text-xs">
                 <button
-                  onClick={() => setActiveIdx((prev) => Math.max(0, prev - 1))}
+                  onClick={() => jumpToStage(Math.max(0, activeIdx - 1))}
                   disabled={activeIdx === 0}
                   className={`flex items-center gap-1 font-semibold ${
-                    activeIdx === 0 ? "text-slate-300 cursor-not-allowed" : "text-slate-600 hover:text-slate-900"
+                    activeIdx === 0
+                      ? "text-slate-300 cursor-not-allowed"
+                      : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
                   <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
@@ -468,15 +416,17 @@ export default function ScrollFeatures() {
                   <span>Prev</span>
                 </button>
 
-                <span className="text-[10px] font-mono text-slate-400">
-                  Scroll or swipe to advance
+                <span className="text-[10px] sm:text-[11px] font-mono text-slate-400">
+                  Scroll down for next
                 </span>
 
                 <button
-                  onClick={() => setActiveIdx((prev) => Math.min(STAGES.length - 1, prev + 1))}
+                  onClick={() => jumpToStage(Math.min(STAGES.length - 1, activeIdx + 1))}
                   disabled={activeIdx === STAGES.length - 1}
                   className={`flex items-center gap-1 font-semibold ${
-                    activeIdx === STAGES.length - 1 ? "text-slate-300 cursor-not-allowed" : "text-slate-900 hover:text-[#c8102e]"
+                    activeIdx === STAGES.length - 1
+                      ? "text-slate-300 cursor-not-allowed"
+                      : "text-slate-900 hover:text-[#c8102e]"
                   }`}
                 >
                   <span>Next</span>
@@ -485,24 +435,25 @@ export default function ScrollFeatures() {
                   </svg>
                 </button>
               </div>
+
             </div>
+
           </div>
 
         </div>
 
-      </div>
+        {/* ── BOTTOM STATUS BAR ── */}
+        <div className="relative z-30 max-w-7xl mx-auto w-full flex items-center justify-between text-[10px] sm:text-xs text-slate-400 pt-2 border-t border-slate-200/70 font-medium">
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+            Scroll anywhere on screen to journey through all 6 points
+          </span>
+          <span className="font-mono text-slate-500 shrink-0">
+            {activeIdx === STAGES.length - 1 ? "Complete Pole View" : `Step ${activeIdx + 1} of 6`}
+          </span>
+        </div>
 
-      {/* ── BOTTOM STATUS BAR ── */}
-      <div className="relative z-30 max-w-7xl mx-auto w-full flex items-center justify-between text-[10px] sm:text-xs text-slate-500 pt-2 border-t border-slate-200/60 font-medium">
-        <span className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-          1 scroll gesture moves to the next feature in real time
-        </span>
-        <span className="font-mono text-slate-500 shrink-0">
-          {activeIdx === STAGES.length - 1 ? "Complete Pole View" : `Step ${activeIdx + 1} of 6`}
-        </span>
       </div>
-
     </section>
   );
 }
