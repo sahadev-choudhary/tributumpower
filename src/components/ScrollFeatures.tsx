@@ -19,33 +19,14 @@ export default function ScrollFeatures() {
   const targetTimeRef = useRef<number>(0);
   const currentTimeRef = useRef<number>(0);
   const isSeekingRef = useRef<boolean>(false);
-  const lastSeekTimestampRef = useRef<number>(0);
+  const lastSeekTimeRef = useRef<number>(0);
   const rafIdRef = useRef<number | null>(null);
 
-  // Helper to safely seek the video playhead backwards and forwards
-  const applySeek = useCallback((targetTime: number) => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const safeDuration = duration > 0 ? duration : FALLBACK_DURATION;
-    // Clamp target to avoid the 'ended' state lock on iOS Safari (0 to duration - 0.05)
-    const clampedTime = Math.max(0, Math.min(safeDuration - 0.05, targetTime));
-
-    isSeekingRef.current = true;
-    lastSeekTimestampRef.current = performance.now();
-    try {
-      video.currentTime = clampedTime;
-    } catch {
-      isSeekingRef.current = false;
-    }
-  }, [duration]);
-
-  // ── INITIALIZE & PRIME VIDEO (ESPECIALLY FOR MOBILE / iOS SAFARI) ──────────
+  // ── INITIALIZE & PRIME VIDEO ──────────────────────────────────────────────
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    // Explicitly configure DOM attributes required by iOS WebKit & Android Chrome
     video.muted = true;
     video.defaultMuted = true;
     video.setAttribute("muted", "");
@@ -55,7 +36,7 @@ export default function ScrollFeatures() {
     try {
       video.load();
     } catch {
-      // Ignore if browser restricts early load
+      // Ignore if early load is restricted
     }
 
     const onLoadedMetadata = () => {
@@ -66,13 +47,6 @@ export default function ScrollFeatures() {
 
     const onSeeked = () => {
       isSeekingRef.current = false;
-
-      // Check if user continued scrolling while hardware seek was in progress
-      const currentVideoTime = video.currentTime;
-      const target = targetTimeRef.current;
-      if (Math.abs(currentVideoTime - target) > 0.03) {
-        applySeek(target);
-      }
     };
 
     video.addEventListener("loadedmetadata", onLoadedMetadata);
@@ -82,27 +56,20 @@ export default function ScrollFeatures() {
       onLoadedMetadata();
     }
 
-    // Prime the mobile video decoder pipeline (iOS requires a play/pause cycle)
-    const primeVideoDecoder = () => {
+    // Prime decoder pipeline on mobile (safe play/pause cycle)
+    const primeDecoder = () => {
       if (!video) return;
       video.muted = true;
-      const playPromise = video.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            video.pause();
-          })
-          .catch(() => {
-            // Autoplay policy fallback
-          });
+      const promise = video.play();
+      if (promise !== undefined) {
+        promise.then(() => video.pause()).catch(() => {});
       }
     };
 
-    primeVideoDecoder();
+    primeDecoder();
 
-    // Prime on first mobile user touch or scroll gesture
     const handleFirstTouch = () => {
-      primeVideoDecoder();
+      primeDecoder();
       window.removeEventListener("touchstart", handleFirstTouch);
       window.removeEventListener("scroll", handleFirstTouch);
     };
@@ -116,9 +83,9 @@ export default function ScrollFeatures() {
       window.removeEventListener("touchstart", handleFirstTouch);
       window.removeEventListener("scroll", handleFirstTouch);
     };
-  }, [applySeek]);
+  }, []);
 
-  // ── SCROLL PROGRESS TRACKING (BIDIRECTIONAL FOR FORWARD & REVERSE SCROLL) ──
+  // ── SCROLL PROGRESS TRACKING ──────────────────────────────────────────────
   const handleScroll = useCallback(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -129,23 +96,19 @@ export default function ScrollFeatures() {
 
     if (scrollableDistance <= 0) return;
 
-    // Progress: strictly 0 (top of section) to 1 (bottom of section)
+    // Progress from 0 to 1
     const currentProgress = Math.max(0, Math.min(1, -rect.top / scrollableDistance));
     setProgress(currentProgress);
 
     const safeDuration = duration > 0 ? duration : FALLBACK_DURATION;
-    // Map directly to seconds
-    targetTimeRef.current = currentProgress * (safeDuration - 0.05);
+    // Cap strictly at safeDuration - 0.1 so video NEVER triggers the terminal 'ended' lock on iOS
+    targetTimeRef.current = currentProgress * (safeDuration - 0.1);
   }, [duration]);
 
   useEffect(() => {
     window.addEventListener("scroll", handleScroll, { passive: true });
-    window.addEventListener("touchmove", handleScroll, { passive: true });
     handleScroll();
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("touchmove", handleScroll);
-    };
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
 
   // ── BUTTER-SMOOTH BIDIRECTIONAL RAF SCRUBBING LOOP ─────────────────────────
@@ -161,23 +124,24 @@ export default function ScrollFeatures() {
         const current = currentTimeRef.current;
         const diff = target - current;
 
-        // Smooth damping towards target scroll position (responsive in both directions)
-        if (Math.abs(diff) < 0.01) {
+        // Smooth damping (lerp) towards target scroll position
+        if (Math.abs(diff) < 0.008) {
           currentTimeRef.current = target;
         } else {
-          // Responsive 0.4 damping factor prevents lag when scrolling up or down quickly
-          currentTimeRef.current += diff * 0.4;
+          currentTimeRef.current += diff * 0.22;
         }
 
         const now = performance.now();
-        // Hardware Seek Watchdog: if seek has taken > 90ms or event dropped, release lock
-        if (isSeekingRef.current && (now - lastSeekTimestampRef.current > 90)) {
+        // Watchdog: release seek lock if hardware seek took > 120ms or event dropped
+        if (isSeekingRef.current && (now - lastSeekTimeRef.current > 120)) {
           isSeekingRef.current = false;
         }
 
-        // Apply seek to video playhead whenever playhead deviates from current damped target
+        // Apply seek to video playhead when not seeking
         if (!isSeekingRef.current && Math.abs(video.currentTime - currentTimeRef.current) > 0.02) {
-          applySeek(currentTimeRef.current);
+          isSeekingRef.current = true;
+          lastSeekTimeRef.current = now;
+          video.currentTime = currentTimeRef.current;
         }
       }
 
@@ -190,14 +154,14 @@ export default function ScrollFeatures() {
       active = false;
       if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
     };
-  }, [applySeek]);
+  }, []);
 
   return (
     <section
       ref={containerRef}
       id="features"
       className="relative bg-slate-950"
-      /* Physical scroll height locks the section on screen across all device viewports */
+      /* Calibrated scroll track: ensures cinematic pacing through the sequence */
       style={{ height: `${SCROLL_DISTANCE_VH}vh` }}
     >
       {/* ── STICKY VIEWPORT: Pinned edge-to-edge full screen ─────────────────── */}
@@ -220,7 +184,7 @@ export default function ScrollFeatures() {
         {/* Subtle cinematic gradient vignette along top & bottom edges */}
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/60 z-10" />
 
-        {/* ── MINIMAL TELEMETRY HUD (Top-Left, positioned cleanly below navbar) ─ */}
+        {/* ── MINIMAL TELEMETRY HUD (Top-Left, positioned safely below navbar) ─ */}
         <div className="absolute top-20 left-5 sm:top-24 sm:left-8 z-20 pointer-events-none">
           <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-white/90 shadow-lg">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />

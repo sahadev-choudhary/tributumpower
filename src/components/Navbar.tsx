@@ -17,28 +17,32 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+    let ticking = false;
 
-      // Detect if user is currently inside the full screen video section (#features)
-      const featuresEl = document.getElementById("features");
-      if (featuresEl) {
-        const rect = featuresEl.getBoundingClientRect();
-        // Section is pinned full-screen while rect.top <= 80 and rect.bottom >= 80
-        const isOverVideo = rect.top <= 80 && rect.bottom >= 80;
-        setInVideoSection(isOverVideo);
-      } else {
-        setInVideoSection(false);
+    const onScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const isScrolled = window.scrollY > 20;
+          setScrolled((prev) => (prev !== isScrolled ? isScrolled : prev));
+
+          const featuresEl = document.getElementById("features");
+          if (featuresEl) {
+            const rect = featuresEl.getBoundingClientRect();
+            const isOverVideo = rect.top <= 80 && rect.bottom >= 80;
+            setInVideoSection((prev) => (prev !== isOverVideo ? isOverVideo : prev));
+          } else {
+            setInVideoSection((prev) => (prev ? false : prev));
+          }
+
+          ticking = false;
+        });
+        ticking = true;
       }
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    window.addEventListener("touchmove", handleScroll, { passive: true });
-    handleScroll();
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("touchmove", handleScroll);
-    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
