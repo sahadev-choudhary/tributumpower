@@ -1,199 +1,318 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import Image from "next/image";
 
+// ── CONFIGURATION & FRAME MANIFEST ──────────────────────────────────────────
+const TOTAL_FRAMES = 480;
+const FRAME_WIDTH = 1280;
+const FRAME_HEIGHT = 720;
+const SCROLL_DISTANCE_VH = 450; // Configurable scroll track height (in vh)
+const MAX_CACHE_SIZE = 90; // Bounded memory cache: keeps nearest frames decoded
+const CONCURRENT_DOWNLOADS = 6;
+
+const getFrameUrl = (index: number): string => {
+  const clamped = Math.max(0, Math.min(TOTAL_FRAMES - 1, index));
+  const pad = String(clamped + 1).padStart(5, "0");
+  return `/Pole Sequence/${pad}.jpg`;
+};
+
+// ── 5 CINEMATIC FEATURE STAGES CORRESPONDING TO 3D CAMERA MOTION ────────────
 interface FeatureStage {
   id: string;
   stepNum: string;
+  frameStart: number;
+  frameEnd: number;
   category: string;
   title: string;
   accent: string;
-  badgeBg: string;
-  badgeText: string;
   description: string;
   highlightText: string;
-  // Precise percentage coordinates on the 422x1024 pole image
-  originX: number; // percentage (0 - 100)
-  originY: number; // percentage (0 - 100)
-  scaleDesktop: number;
-  scaleMobile: number;
-  reticleX?: number;
-  reticleY?: number;
-  reticleLabel: string;
 }
 
 const STAGES: FeatureStage[] = [
   {
     id: "solar",
     stepNum: "01",
+    frameStart: 0,
+    frameEnd: 90,
     category: "TOP CROWN",
-    title: "Solar Power Array",
-    accent: "#d97706",
-    badgeBg: "bg-amber-100",
-    badgeText: "text-amber-800",
+    title: "Monocrystalline Solar Crown",
+    accent: "#f59e0b",
     description:
-      "Mounted at the crown of the pole, the monocrystalline solar array harvests daylight to power lighting, CCTV, misting, sensors, and display with zero operating grid electricity cost.",
+      "Mounted at the crown of AtmosPOLE™, the high-efficiency solar array harvests daylight to power illumination, misting, and continuous telemetry with zero operating grid electricity bills.",
     highlightText: "100% self-powered by daylight with integrated overnight battery reserve",
-    originX: 50,
-    originY: 4,
-    scaleDesktop: 2.5,
-    scaleMobile: 2.0,
-    reticleX: 50,
-    reticleY: 4,
-    reticleLabel: "Crown Solar Array",
   },
   {
-    id: "luminaire",
+    id: "luminaire-mesh",
     stepNum: "02",
-    category: "STREET ILLUMINATION",
-    title: "High-Lumen Optical LED Luminaire",
-    accent: "#ca8a04",
-    badgeBg: "bg-yellow-100",
-    badgeText: "text-yellow-800",
+    frameStart: 91,
+    frameEnd: 175,
+    category: "STREET ILLUMINATION & COMMS",
+    title: "Optical LED Luminaire & Mesh Node",
+    accent: "#eab308",
     description:
-      "Cantilevered roadway luminaire features high-output optical LED clusters engineered for wide, uniform carriageway and pedestrian coverage, replacing standard streetlights 1-to-1.",
-    highlightText: "Full roadway illumination standards powered entirely by clean solar energy",
-    originX: 76,
-    originY: 10.2,
-    scaleDesktop: 2.6,
-    scaleMobile: 2.1,
-    reticleX: 76,
-    reticleY: 10.2,
-    reticleLabel: "Roadway LED Luminaire",
+      "Cantilevered roadway luminaires deliver wide, uniform carriageway and pedestrian sidewalk coverage, coupled with encrypted municipal IoT mesh node connectivity for smart city systems.",
+    highlightText: "Full roadway illumination standards replacing conventional streetlights 1-to-1",
   },
   {
-    id: "cctv",
+    id: "mist-cctv",
     stepNum: "03",
-    category: "SMART CITY SECURITY",
-    title: "Integrated CCTV Surveillance",
-    accent: "#4f46e5",
-    badgeBg: "bg-indigo-100",
-    badgeText: "text-indigo-800",
+    frameStart: 176,
+    frameEnd: 265,
+    category: "AIR PURIFICATION & SECURITY",
+    title: "Active Mist Suppression & 24/7 CCTV",
+    accent: "#06b6d4",
     description:
-      "Mounted centrally right below the solar crown, the high-definition smart camera provides 24/7 roadway and pedestrian security oversight without requiring separate dedicated surveillance poles.",
-    highlightText: "Direct feed integration for Smart City Command Centres (ICCC) and traffic safety",
-    originX: 50,
-    originY: 10,
-    scaleDesktop: 2.8,
-    scaleMobile: 2.3,
-    reticleX: 50,
-    reticleY: 9.8,
-    reticleLabel: "HD Security Camera",
+      "Micro-fine mist nozzles atomize water droplets that collide with toxic PM2.5 and PM10 particles, washing the air clean right where citizens breathe, backed by a 24/7 smart security camera.",
+    highlightText: "Chemical-free particulate knock-down with integrated municipal surveillance",
   },
   {
-    id: "mist",
+    id: "telemetry-display",
     stepNum: "04",
-    category: "AIR PURIFICATION",
-    title: "Active Mist Smog Suppression",
-    accent: "#0284c7",
-    badgeBg: "bg-sky-100",
-    badgeText: "text-sky-800",
+    frameStart: 266,
+    frameEnd: 365,
+    category: "CONTINUOUS TELEMETRY",
+    title: "Dual Laser Sensors & Public Display",
+    accent: "#10b981",
     description:
-      "Micro-fine mist nozzles atomize water droplets into the air. These microscopic droplets collide with toxic PM2.5 and PM10 smog particles, weighing them down and washing the air clean right where citizens breathe.",
-    highlightText: "Chemical-free particulate knock-down active on both sides of the pole",
-    originX: 23,
-    originY: 27,
-    scaleDesktop: 2.6,
-    scaleMobile: 2.1,
-    reticleX: 23,
-    reticleY: 27,
-    reticleLabel: "Mist Suppression Nozzles",
-  },
-  {
-    id: "sensors",
-    stepNum: "05",
-    category: "CONTINUOUS MONITORING",
-    title: "Dual Air Quality Sensors",
-    accent: "#dc2626",
-    badgeBg: "bg-rose-100",
-    badgeText: "text-rose-800",
-    description:
-      "Dual optical laser particulate sensors measure air quality in real time: tracking incoming ambient polluted air vs. the purified air after misting, streaming verified telemetry every 5 minutes.",
-    highlightText: "Uncompromised transparency: ambient intake vs. clean treated output",
-    originX: 50,
-    originY: 22,
-    scaleDesktop: 2.5,
-    scaleMobile: 2.0,
-    reticleX: 50,
-    reticleY: 22,
-    reticleLabel: "Intake Sensors & Vents",
-  },
-  {
-    id: "screen",
-    stepNum: "06",
-    category: "CITIZEN TRANSPARENCY",
-    title: "Public Digital Display",
-    accent: "#7c3aed",
-    badgeBg: "bg-violet-100",
-    badgeText: "text-violet-800",
-    description:
-      "A tall, sunlight-readable portrait screen displays live PM2.5 and PM10 numbers, the Air Pulse™ Index, and total cubic feet of cleaned air — giving every citizen direct awareness without needing an app.",
-    highlightText: "Real-time contrast: Ambient Unhealthy (125) vs. Treated Clean (4.16)",
-    originX: 50,
-    originY: 51,
-    scaleDesktop: 2.2,
-    scaleMobile: 1.8,
-    reticleX: 50,
-    reticleY: 51,
-    reticleLabel: "Live Public Display",
+      "Dual optical laser sensors track ambient intake vs. clean treated air every 5 minutes, streaming verified telemetry to a tall, sunlight-readable portrait screen for public transparency.",
+    highlightText: "Real-time citizen contrast: Ambient Unhealthy vs. Treated Clean air",
   },
   {
     id: "full-pole",
-    stepNum: "07",
+    stepNum: "05",
+    frameStart: 366,
+    frameEnd: 479,
     category: "UNIFIED URBAN ASSET",
     title: "The Complete Smart Pole",
-    accent: "#16a34a",
-    badgeBg: "bg-emerald-100",
-    badgeText: "text-emerald-800",
+    accent: "#3b82f6",
     description:
-      "From solar crown and CCTV surveillance down to the rugged bolted base, AtmosPOLE™ consolidates six vital urban capabilities into one elegant architectural column ready for India's 100+ Smart Cities.",
-    highlightText: "One standard footprint. Six integrated smart city functions. Zero disruption.",
-    originX: 50,
-    originY: 50,
-    scaleDesktop: 1.0,
-    scaleMobile: 1.0,
-    reticleLabel: "Full Integrated AtmosPOLE™",
+      "From solar crown down to the rugged bolted base, AtmosPOLE™ consolidates six vital urban capabilities into one elegant architectural column ready for India's 100+ Smart Cities.",
+    highlightText: "Standard footprint. Six integrated smart capabilities. Zero road redesign.",
   },
 ];
 
 export default function ScrollFeatures() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const stickyRef = useRef<HTMLDivElement>(null);
-  const [activeIdx, setActiveIdx] = useState<number>(0);
-  const activeIdxRef = useRef<number>(0);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const [activeStageIdx, setActiveStageIdx] = useState<number>(0);
+  const [currentFrameNum, setCurrentFrameNum] = useState<number>(1);
   const [isMobile, setIsMobile] = useState<boolean>(false);
-  const lastStepTimeRef = useRef<number>(0);
-  const touchStartYRef = useRef<number | null>(null);
-  const touchStartXRef = useRef<number | null>(null);
+  const [initialLoaded, setInitialLoaded] = useState<boolean>(false);
+  const [reducedMotion, setReducedMotion] = useState<boolean>(false);
 
-  useEffect(() => {
-    activeIdxRef.current = activeIdx;
-  }, [activeIdx]);
+  // Animation & cache state refs
+  const currentFrameRef = useRef<number>(0);
+  const targetFrameRef = useRef<number>(0);
+  const activeDownloadsRef = useRef<Set<number>>(new Set());
+  const imageCacheRef = useRef<Map<number, HTMLImageElement>>(new Map());
+  const cacheOrderRef = useRef<number[]>([]);
+  const lastDrawnFrameRef = useRef<number>(-1);
+  const rafIdRef = useRef<number | null>(null);
 
+  // ── DETECT VIEWPORT & MOTION PREFERENCE ──────────────────────────────────
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+    const checkViewport = () => {
+      const mobile = window.innerWidth < 1024 || window.innerHeight > window.innerWidth;
+      setIsMobile(mobile);
+    };
+
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReducedMotion(mediaQuery.matches);
+
+    const handleMotionChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mediaQuery.addEventListener("change", handleMotionChange);
+
+    checkViewport();
+    window.addEventListener("resize", checkViewport);
+
+    return () => {
+      window.removeEventListener("resize", checkViewport);
+      mediaQuery.removeEventListener("change", handleMotionChange);
+    };
   }, []);
 
-  // Jump to specific stage
-  const jumpToStage = useCallback((idx: number) => {
-    const targetIdx = Math.max(0, Math.min(STAGES.length - 1, idx));
-    setActiveIdx(targetIdx);
-    activeIdxRef.current = targetIdx;
-
-    const el = containerRef.current;
-    if (!el) return;
-    const scrollableDistance = el.offsetHeight - window.innerHeight;
-    if (scrollableDistance > 0) {
-      const targetScroll = el.offsetTop + (targetIdx / (STAGES.length - 1)) * scrollableDistance;
-      window.scrollTo({ top: targetScroll, behavior: "smooth" });
+  // ── IMAGE LOADER WITH BOUNDED LRU CACHE ──────────────────────────────────
+  const requestFrame = useCallback((index: number): Promise<HTMLImageElement | null> => {
+    const cache = imageCacheRef.current;
+    if (cache.has(index)) {
+      // Refresh LRU order
+      const order = cacheOrderRef.current;
+      const idx = order.indexOf(index);
+      if (idx > -1) order.splice(idx, 1);
+      order.push(index);
+      return Promise.resolve(cache.get(index)!);
     }
+
+    if (activeDownloadsRef.current.has(index)) {
+      return Promise.resolve(null);
+    }
+
+    if (activeDownloadsRef.current.size >= CONCURRENT_DOWNLOADS) {
+      return Promise.resolve(null);
+    }
+
+    activeDownloadsRef.current.add(index);
+
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      img.src = getFrameUrl(index);
+
+      img.onload = () => {
+        activeDownloadsRef.current.delete(index);
+        cache.set(index, img);
+        cacheOrderRef.current.push(index);
+
+        // Evict oldest if exceeding bounded cache size
+        while (cacheOrderRef.current.length > MAX_CACHE_SIZE) {
+          const oldest = cacheOrderRef.current.shift();
+          if (oldest !== undefined && oldest !== 0 && oldest !== Math.round(targetFrameRef.current)) {
+            cache.delete(oldest);
+          }
+        }
+        resolve(img);
+      };
+
+      img.onerror = () => {
+        activeDownloadsRef.current.delete(index);
+        resolve(null);
+      };
+    });
   }, []);
 
-  // Sync index with scroll position when scrolling naturally
+  // ── INITIAL PRELOAD (FIRST FRAME + STRATEGIC KEYFRAMES) ──────────────────
+  useEffect(() => {
+    // 1. Load First Frame with top priority
+    const firstImg = new window.Image();
+    firstImg.src = getFrameUrl(0);
+    firstImg.onload = () => {
+      imageCacheRef.current.set(0, firstImg);
+      cacheOrderRef.current.push(0);
+      setInitialLoaded(true);
+    };
+
+    // 2. Preload strategic keyframes across the sequence
+    const keyframes = [0, 60, 120, 180, 240, 300, 360, 420, 479];
+    keyframes.forEach((f) => {
+      if (f !== 0) requestFrame(f);
+    });
+  }, [requestFrame]);
+
+  // ── PRIORITY PROGRESSIVE LOADER AROUND CURRENT PLAYHEAD ──────────────────
+  const updatePreloadWindow = useCallback(
+    (centerFrame: number) => {
+      // Prioritize nearby frames (ahead and behind)
+      const preloadRange = isMobile ? 12 : 24;
+      const start = Math.max(0, centerFrame - 6);
+      const end = Math.min(TOTAL_FRAMES - 1, centerFrame + preloadRange);
+
+      for (let i = start; i <= end; i++) {
+        if (!imageCacheRef.current.has(i)) {
+          requestFrame(i);
+        }
+      }
+    },
+    [isMobile, requestFrame]
+  );
+
+  // ── DRAW FRAME ONTO CANVAS ───────────────────────────────────────────────
+  const drawFrameToCanvas = useCallback(
+    (frameIndex: number) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const ctx = canvas.getContext("2d", { alpha: false });
+      if (!ctx) return;
+
+      const cache = imageCacheRef.current;
+      let img = cache.get(frameIndex);
+
+      // Graceful fallback: find nearest available loaded frame
+      if (!img) {
+        let minDist = Infinity;
+        let nearestIndex = -1;
+        for (const [idx, loadedImg] of cache.entries()) {
+          const dist = Math.abs(idx - frameIndex);
+          if (dist < minDist) {
+            minDist = dist;
+            nearestIndex = idx;
+            img = loadedImg;
+          }
+        }
+      }
+
+      if (!img || !img.complete || img.naturalWidth === 0) return;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const displayW = canvas.clientWidth;
+      const displayH = canvas.clientHeight;
+
+      if (displayW === 0 || displayH === 0) return;
+
+      // Adjust backing buffer resolution to match display size * capped dpr
+      const targetBufferW = Math.round(displayW * dpr);
+      const targetBufferH = Math.round(displayH * dpr);
+
+      if (canvas.width !== targetBufferW || canvas.height !== targetBufferH) {
+        canvas.width = targetBufferW;
+        canvas.height = targetBufferH;
+      }
+
+      ctx.save();
+      ctx.scale(dpr, dpr);
+
+      const naturalW = img.naturalWidth || FRAME_WIDTH;
+      const naturalH = img.naturalHeight || FRAME_HEIGHT;
+
+      if (isMobile) {
+        // ── MOBILE PRESENTATION: IMMERSIVE CLOSE-UP ───────────────────────
+        // Zoom in on the central pole area so the product is prominent & large
+        // Crop extraneous lateral background while keeping top solar and mist visible
+        const targetAspect = displayW / displayH; // portrait ratio (e.g. 0.46)
+        let srcW = naturalH * targetAspect * 1.12;
+        let srcH = naturalH;
+
+        if (srcW > naturalW) {
+          srcW = naturalW;
+          srcH = naturalW / targetAspect;
+        }
+
+        const srcX = (naturalW - srcW) / 2;
+        const srcY = (naturalH - srcH) / 2;
+
+        ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, displayW, displayH);
+      } else {
+        // ── DESKTOP PRESENTATION: FULL PRODUCT COMPOSITION ────────────────
+        // Fill canvas while maintaining 16:9 aspect ratio and centering the pole
+        const canvasAspect = displayW / displayH;
+        const imgAspect = naturalW / naturalH;
+
+        let drawW = displayW;
+        let drawH = displayH;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        if (canvasAspect > imgAspect) {
+          drawW = displayW;
+          drawH = displayW / imgAspect;
+          offsetY = (displayH - drawH) / 2;
+        } else {
+          drawH = displayH;
+          drawW = displayH * imgAspect;
+          offsetX = (displayW - drawW) / 2;
+        }
+
+        ctx.drawImage(img, 0, 0, naturalW, naturalH, offsetX, offsetY, drawW, drawH);
+      }
+
+      ctx.restore();
+      lastDrawnFrameRef.current = frameIndex;
+    },
+    [isMobile]
+  );
+
+  // ── SCROLL TRACKING & PROGRESS COMPUTATION ────────────────────────────────
   const handleScroll = useCallback(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -201,17 +320,22 @@ export default function ScrollFeatures() {
     const rect = el.getBoundingClientRect();
     const windowH = window.innerHeight;
     const scrollableDistance = el.offsetHeight - windowH;
-    const currentScrolled = -rect.top;
 
     if (scrollableDistance <= 0) return;
 
-    const progress = Math.max(0, Math.min(1, currentScrolled / scrollableDistance));
-    const total = STAGES.length;
-    const rawIndex = progress * total;
-    const calculatedIndex = Math.min(total - 1, Math.max(0, Math.floor(rawIndex)));
+    // Progress from 0 to 1 across the pinned scroll track
+    const progress = Math.max(0, Math.min(1, -rect.top / scrollableDistance));
+    const target = progress * (TOTAL_FRAMES - 1);
+    targetFrameRef.current = target;
 
-    setActiveIdx(calculatedIndex);
-    activeIdxRef.current = calculatedIndex;
+    // Compute active feature stage
+    const currentRounded = Math.round(target);
+    const stageIdx = STAGES.findIndex(
+      (s) => currentRounded >= s.frameStart && currentRounded <= s.frameEnd
+    );
+    if (stageIdx !== -1) {
+      setActiveStageIdx(stageIdx);
+    }
   }, []);
 
   useEffect(() => {
@@ -220,380 +344,260 @@ export default function ScrollFeatures() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
 
-  // ── NON-PASSIVE TOUCH & WHEEL PINNING LOCK ──────────────────────────────
-  // Prevents mobile screen from flinging past before all 7 features are seen.
-  // Each swipe up/down cleanly steps through features one by one!
+  // ── SMOOTH ANIMATION LOOP (LERP & DAMPING) ────────────────────────────────
   useEffect(() => {
-    const stickyEl = stickyRef.current;
-    if (!stickyEl) return;
+    let active = true;
 
-    const COOLDOWN_MS = 380;
+    const loop = () => {
+      if (!active) return;
 
-    const onTouchStart = (e: TouchEvent) => {
-      touchStartYRef.current = e.touches[0].clientY;
-      touchStartXRef.current = e.touches[0].clientX;
-    };
+      const target = targetFrameRef.current;
+      const current = currentFrameRef.current;
+      const diff = target - current;
 
-    const onTouchMove = (e: TouchEvent) => {
-      if (touchStartYRef.current === null) return;
-      const el = containerRef.current;
-      if (!el) return;
-
-      const rect = el.getBoundingClientRect();
-      const windowH = window.innerHeight;
-      const isPinned = rect.top <= 15 && rect.bottom >= windowH - 15;
-      if (!isPinned) return;
-
-      const currentY = e.touches[0].clientY;
-      const currentX = e.touches[0].clientX;
-      const diffY = touchStartYRef.current - currentY; // positive = swipe up (scroll down)
-      const diffX = (touchStartXRef.current ?? currentX) - currentX;
-
-      if (Math.abs(diffX) > Math.abs(diffY)) return;
-
-      const now = Date.now();
-
-      if (diffY > 18) {
-        // Swiping UP -> next feature
-        if (activeIdxRef.current < STAGES.length - 1) {
-          if (e.cancelable) e.preventDefault();
-          if (now - lastStepTimeRef.current > COOLDOWN_MS) {
-            lastStepTimeRef.current = now;
-            touchStartYRef.current = currentY;
-            jumpToStage(activeIdxRef.current + 1);
-          }
-        }
-      } else if (diffY < -18) {
-        // Swiping DOWN -> previous feature
-        if (activeIdxRef.current > 0) {
-          if (e.cancelable) e.preventDefault();
-          if (now - lastStepTimeRef.current > COOLDOWN_MS) {
-            lastStepTimeRef.current = now;
-            touchStartYRef.current = currentY;
-            jumpToStage(activeIdxRef.current - 1);
-          }
-        }
+      if (reducedMotion) {
+        // Reduced motion: jump directly to nearest stage keyframe
+        currentFrameRef.current = target;
+      } else if (Math.abs(diff) < 0.04) {
+        currentFrameRef.current = target;
+      } else {
+        // Organic smooth damping factor
+        currentFrameRef.current += diff * 0.22;
       }
-    };
 
-    const onTouchEnd = () => {
-      touchStartYRef.current = null;
-      touchStartXRef.current = null;
-    };
+      const frameToDraw = Math.round(currentFrameRef.current);
+      setCurrentFrameNum(frameToDraw + 1);
 
-    const onWheel = (e: WheelEvent) => {
-      const el = containerRef.current;
-      if (!el) return;
-
-      const rect = el.getBoundingClientRect();
-      const windowH = window.innerHeight;
-      const isPinned = rect.top <= 15 && rect.bottom >= windowH - 15;
-      if (!isPinned) return;
-
-      const now = Date.now();
-
-      if (e.deltaY > 15) {
-        if (activeIdxRef.current < STAGES.length - 1) {
-          if (e.cancelable) e.preventDefault();
-          if (now - lastStepTimeRef.current > COOLDOWN_MS) {
-            lastStepTimeRef.current = now;
-            jumpToStage(activeIdxRef.current + 1);
-          }
-        }
-      } else if (e.deltaY < -15) {
-        if (activeIdxRef.current > 0) {
-          if (e.cancelable) e.preventDefault();
-          if (now - lastStepTimeRef.current > COOLDOWN_MS) {
-            lastStepTimeRef.current = now;
-            jumpToStage(activeIdxRef.current - 1);
-          }
-        }
+      if (frameToDraw !== lastDrawnFrameRef.current) {
+        drawFrameToCanvas(frameToDraw);
       }
+
+      // Proactively preload surrounding frames
+      updatePreloadWindow(frameToDraw);
+
+      rafIdRef.current = requestAnimationFrame(loop);
     };
 
-    stickyEl.addEventListener("touchstart", onTouchStart, { passive: true });
-    stickyEl.addEventListener("touchmove", onTouchMove, { passive: false });
-    stickyEl.addEventListener("touchend", onTouchEnd, { passive: true });
-    stickyEl.addEventListener("wheel", onWheel, { passive: false });
+    rafIdRef.current = requestAnimationFrame(loop);
 
     return () => {
-      stickyEl.removeEventListener("touchstart", onTouchStart);
-      stickyEl.removeEventListener("touchmove", onTouchMove);
-      stickyEl.removeEventListener("touchend", onTouchEnd);
-      stickyEl.removeEventListener("wheel", onWheel);
+      active = false;
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
     };
-  }, [jumpToStage]);
+  }, [drawFrameToCanvas, reducedMotion, updatePreloadWindow]);
 
-  const current = STAGES[activeIdx] || STAGES[0];
-  const activeScale = isMobile ? current.scaleMobile : current.scaleDesktop;
+  // ── REDRAW ON VIEWPORT RESIZE ─────────────────────────────────────────────
+  useEffect(() => {
+    const handleResize = () => {
+      drawFrameToCanvas(Math.round(currentFrameRef.current));
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [drawFrameToCanvas]);
+
+  // ── SMOOTH CLICK-TO-JUMP MILESTONE NAVIGATION ─────────────────────────────
+  const jumpToStage = (idx: number) => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const stage = STAGES[idx];
+    if (!stage) return;
+
+    const midFrame = Math.round((stage.frameStart + stage.frameEnd) / 2);
+    const progress = midFrame / (TOTAL_FRAMES - 1);
+    const scrollableDistance = el.offsetHeight - window.innerHeight;
+    const targetScroll = el.offsetTop + progress * scrollableDistance;
+
+    window.scrollTo({ top: targetScroll, behavior: "smooth" });
+  };
+
+  const activeStage = STAGES[activeStageIdx] || STAGES[0];
 
   return (
     <section
       ref={containerRef}
       id="features"
-      className="relative bg-gradient-to-b from-slate-50 via-sky-50/20 to-white"
-      style={{ height: "420vh" }}
+      className="relative bg-slate-950"
+      /* Configurable scroll height: controls pacing of the 480-frame journey */
+      style={{ height: `${SCROLL_DISTANCE_VH}vh` }}
     >
-      {/* ── STICKY VIEWPORT: Pinned on screen throughout all 7 stages ── */}
-      <div
-        ref={stickyRef}
-        className="sticky top-0 h-screen w-full overflow-hidden flex flex-col justify-between py-3 sm:py-5 px-4 sm:px-8 lg:px-12 select-none"
-      >
-        {/* Ambient atmospheric backdrop lighting */}
-        <div
-          className="absolute inset-0 pointer-events-none transition-all duration-700 ease-out"
-          style={{
-            background: `radial-gradient(circle 500px at 45% 50%, ${current.accent}14, transparent 70%),
-                         radial-gradient(circle 450px at 75% 30%, rgba(22, 163, 74, 0.05), transparent 70%)`,
-          }}
+      {/* ── STICKY VIEWPORT: Pinned on screen throughout sequence ───────────── */}
+      <div className="sticky top-0 h-screen w-full overflow-hidden select-none bg-slate-950">
+        
+        {/* ── HIGH-PERFORMANCE HTML5 CANVAS RENDERER ───────────────────────── */}
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full block"
+          style={{ willChange: "transform" }}
         />
 
-        {/* ── TOP HEADER BAR: Milestone Navigation ── */}
-        <div className="relative z-30 max-w-7xl mx-auto w-full flex items-center justify-between pb-2 sm:pb-3 border-b border-slate-200/70">
-          <div className="flex items-center gap-2">
+        {/* Initial loading placeholder (disappears the millisecond Frame 1 is ready) */}
+        {!initialLoaded && (
+          <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center text-white z-20">
+            <div className="w-10 h-10 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin mb-4" />
+            <span className="text-xs font-mono tracking-widest uppercase text-slate-400">
+              Loading AtmosPOLE™ Experience...
+            </span>
+          </div>
+        )}
+
+        {/* Subtle cinematic gradient vignette along borders */}
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/70 via-transparent to-black/50 z-10" />
+
+        {/* ── TOP BAR: TELEMETRY & STAGE MILESTONES ────────────────────────── */}
+        <div className="absolute top-0 inset-x-0 z-30 pt-4 sm:pt-6 px-4 sm:px-8 max-w-7xl mx-auto flex items-center justify-between">
+          
+          {/* Live Status Pill */}
+          <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-black/60 backdrop-blur-xl border border-white/15 text-white shadow-lg">
             <span
-              className="w-2.5 h-2.5 rounded-full animate-ping shrink-0"
-              style={{ backgroundColor: current.accent }}
+              className="w-2 h-2 rounded-full animate-ping shrink-0"
+              style={{ backgroundColor: activeStage.accent }}
             />
-            <span className="text-[11px] sm:text-xs font-bold tracking-widest text-slate-700 uppercase">
-              AtmosPOLE™ Inspection · Point {activeIdx + 1} of {STAGES.length}
+            <span className="text-[10px] sm:text-xs font-mono font-bold tracking-wider uppercase">
+              Interactive 3D Walkthrough
+            </span>
+            <span className="hidden sm:inline text-white/40">|</span>
+            <span className="hidden sm:inline text-[10px] sm:text-xs font-mono text-emerald-400 font-semibold">
+              Frame {currentFrameNum} / {TOTAL_FRAMES}
             </span>
           </div>
 
           {/* Quick-select milestone pills */}
-          <div className="flex items-center gap-1 sm:gap-1.5">
+          <div className="flex items-center gap-1 sm:gap-1.5 bg-black/60 backdrop-blur-xl p-1 rounded-full border border-white/15">
             {STAGES.map((s, idx) => (
               <button
                 key={s.id}
                 onClick={() => jumpToStage(idx)}
-                aria-label={`Jump to ${s.title}`}
-                className={`transition-all duration-300 rounded-full flex items-center justify-center text-[10px] font-mono font-bold ${
-                  idx === activeIdx
-                    ? "w-7 sm:w-8 h-6 text-white shadow-xs"
-                    : "w-5 sm:w-6 h-6 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60"
+                aria-label={`Jump to stage ${s.title}`}
+                className={`transition-all duration-300 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-mono font-bold px-2 sm:px-3 py-1 ${
+                  idx === activeStageIdx
+                    ? "text-white shadow-md"
+                    : "text-white/60 hover:text-white hover:bg-white/10"
                 }`}
                 style={{
-                  backgroundColor: idx === activeIdx ? current.accent : "transparent",
+                  backgroundColor: idx === activeStageIdx ? activeStage.accent : "transparent",
                 }}
               >
                 {s.stepNum}
               </button>
             ))}
           </div>
+
         </div>
 
-        {/* ── CENTRAL STAGE: TWO SEPARATE GRID COLUMNS (POLE BESIDE TEXT) ── */}
-        <div className="relative z-20 flex-1 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6 lg:gap-10 items-center my-auto overflow-hidden">
-          
-          {/* ── COLUMN 1 (Left 7 Cols on Desktop / Top Half on Mobile): THE POLE ── */}
-          <div className="lg:col-span-7 h-[42vh] sm:h-[48vh] lg:h-[72vh] w-full flex items-center justify-center relative overflow-hidden bg-white/40 rounded-2xl sm:rounded-3xl border border-slate-200/60 shadow-inner">
-            
-            {/* Direct aspect-ratio Pole Wrapper — 100% 1-to-1 coordinate alignment */}
+        {/* ── FLOATING FEATURE CARD (HTML OVERLAY ABOVE CANVAS) ─────────────── */}
+        <div className="absolute z-30 bottom-6 sm:bottom-10 inset-x-4 sm:left-8 sm:right-auto max-w-lg">
+          <div
+            key={activeStage.id}
+            className="p-5 sm:p-6 lg:p-7 rounded-3xl bg-black/75 backdrop-blur-2xl border border-white/20 shadow-2xl text-white transition-all duration-500 relative overflow-hidden"
+          >
+            {/* Top accent line */}
             <div
-              className="relative h-[90%] max-w-[90%] aspect-[422/1024] flex items-center justify-center filter drop-shadow-[0_20px_35px_rgba(15,23,42,0.18)] transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
+              className="absolute top-0 left-6 right-6 h-1 rounded-b-full transition-colors duration-500"
+              style={{ backgroundColor: activeStage.accent }}
+            />
+
+            {/* Category tag & step counter */}
+            <div className="flex items-center justify-between mb-2 sm:mb-2.5 pt-1">
+              <span
+                className="px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-mono font-bold tracking-wider uppercase bg-white/10"
+                style={{ color: activeStage.accent }}
+              >
+                {activeStage.category}
+              </span>
+              <span className="text-[11px] sm:text-xs font-mono text-white/50">
+                Stage {activeStage.stepNum} of 05
+              </span>
+            </div>
+
+            {/* Title */}
+            <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight leading-snug mb-2 sm:mb-3">
+              {activeStage.title}
+            </h3>
+
+            {/* Description */}
+            <p className="text-xs sm:text-sm text-white/80 leading-relaxed mb-3 sm:mb-4">
+              {activeStage.description}
+            </p>
+
+            {/* Highlight pill */}
+            <div
+              className="rounded-2xl px-3.5 py-2 flex items-start gap-2.5 border transition-colors mb-3 sm:mb-4"
               style={{
-                transformOrigin: `${current.originX}% ${current.originY}%`,
-                transform: `scale(${activeScale})`,
+                backgroundColor: `${activeStage.accent}15`,
+                borderColor: `${activeStage.accent}35`,
               }}
             >
-              <Image
-                src="/atmospole-studio.png"
-                alt="AtmosPOLE™ Smart Urban Infrastructure"
-                fill
-                priority
-                sizes="(max-width: 1024px) 50vw, 30vw"
-                className="object-contain"
+              <div
+                className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0"
+                style={{ backgroundColor: activeStage.accent }}
               />
-
-              {/* Reticle / Target ring on the specific component */}
-              {current.reticleX !== undefined && current.reticleY !== undefined && current.id !== "full-pole" && (
-                <div
-                  className="absolute pointer-events-none transition-all duration-700 ease-out"
-                  style={{
-                    top: `${current.reticleY}%`,
-                    left: `${current.reticleX}%`,
-                    transform: "translate(-50%, -50%)",
-                  }}
-                >
-                  <span
-                    className="absolute -inset-3.5 rounded-full animate-ping opacity-75"
-                    style={{ backgroundColor: current.accent }}
-                  />
-                  <span
-                    className="relative block w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 bg-white/95 shadow-md flex items-center justify-center"
-                    style={{ borderColor: current.accent }}
-                  >
-                    <span
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: current.accent }}
-                    />
-                  </span>
-                </div>
-              )}
-
-              {/* CCTV Scan Line / Pulse Glow when CCTV Stage is Active */}
-              {current.id === "cctv" && (
-                <div
-                  className="absolute top-[8.5%] left-[36%] right-[36%] h-[24px] rounded-full pointer-events-none opacity-60 animate-pulse"
-                  style={{
-                    boxShadow: "0 0 25px rgba(79, 70, 229, 0.8)",
-                  }}
-                />
-              )}
-
-              {/* Animated Mist Sprays when Mist Stage is Active */}
-              {current.id === "mist" && (
-                <div className="absolute inset-0 pointer-events-none">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div
-                      key={i}
-                      className="absolute rounded-full blur-xs"
-                      style={{
-                        width: `${26 + i * 8}px`,
-                        height: "7px",
-                        background: "rgba(2, 132, 199, 0.45)",
-                        top: `${24 + i * 3}%`,
-                        left: "-18%",
-                        animation: `mistDriftL 1.8s infinite ease-out`,
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {/* LED Beam Glow when Luminaire Stage is Active */}
-              {current.id === "luminaire" && (
-                <div
-                  className="absolute top-[8%] right-[-20%] w-[180px] h-[180px] pointer-events-none opacity-50 blur-xl"
-                  style={{
-                    background:
-                      "radial-gradient(ellipse at 50% 0%, rgba(234, 179, 8, 0.6) 0%, transparent 70%)",
-                  }}
-                />
-              )}
-
-              {/* Solar Irradiance Glow when Solar Stage is Active */}
-              {current.id === "solar" && (
-                <div
-                  className="absolute -top-[12%] left-[10%] right-[10%] h-[90px] pointer-events-none opacity-50 blur-lg"
-                  style={{
-                    background:
-                      "radial-gradient(ellipse at 50% 50%, rgba(245, 158, 11, 0.6) 0%, transparent 60%)",
-                  }}
-                />
-              )}
+              <span className="text-xs sm:text-sm font-semibold text-white/95 leading-snug">
+                {activeStage.highlightText}
+              </span>
             </div>
 
-            {/* Tag overlay for active component */}
-            <div className="absolute bottom-3 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full border border-slate-200/80 text-[10px] font-mono font-semibold text-slate-700 shadow-xs">
-              {current.reticleLabel}
-            </div>
-          </div>
-
-          {/* ── COLUMN 2 (Right 5 Cols on Desktop / Bottom Half on Mobile): THE TEXT ── */}
-          <div className="lg:col-span-5 w-full flex flex-col justify-center">
-            
-            <div
-              key={current.id}
-              className="p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl bg-white/85 backdrop-blur-md border border-white/90 shadow-xl transition-all duration-500 relative"
-            >
-              {/* Decorative top color bar */}
-              <div
-                className="absolute top-0 left-6 right-6 h-1 rounded-b-full transition-colors duration-500"
-                style={{ backgroundColor: current.accent }}
-              />
-
-              {/* Category Pill & Step Counter */}
-              <div className="flex items-center justify-between mb-1.5 sm:mb-3 pt-1">
-                <span
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold tracking-wider uppercase ${current.badgeBg} ${current.badgeText}`}
-                >
-                  {current.category}
-                </span>
-                <span className="text-[11px] sm:text-xs font-mono font-semibold text-slate-400">
-                  {current.stepNum} of 07
-                </span>
-              </div>
-
-              {/* Title */}
-              <h3 className="text-lg sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight leading-snug mb-1.5 sm:mb-3">
-                {current.title}
-              </h3>
-
-              {/* Description */}
-              <p className="text-xs sm:text-sm lg:text-base text-slate-600 leading-relaxed mb-2.5 sm:mb-4">
-                {current.description}
-              </p>
-
-              {/* Punchy Highlight Pill */}
-              <div
-                className="rounded-xl px-3.5 py-2 sm:py-2.5 flex items-start gap-2.5 border transition-colors mb-2.5 sm:mb-4"
-                style={{
-                  backgroundColor: `${current.accent}0d`,
-                  borderColor: `${current.accent}25`,
-                }}
+            {/* Navigation & scrub prompt */}
+            <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs">
+              <button
+                onClick={() => jumpToStage(Math.max(0, activeStageIdx - 1))}
+                disabled={activeStageIdx === 0}
+                className={`flex items-center gap-1 font-semibold px-2 py-1 rounded-md transition-colors ${
+                  activeStageIdx === 0
+                    ? "text-white/20 cursor-not-allowed"
+                    : "text-white/70 hover:text-white hover:bg-white/10"
+                }`}
               >
-                <div
-                  className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0"
-                  style={{ backgroundColor: current.accent }}
-                />
-                <span className="text-xs sm:text-sm font-semibold text-slate-800 leading-snug">
-                  {current.highlightText}
-                </span>
-              </div>
+                <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M10 13l-5-5 5-5"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span>Prev</span>
+              </button>
 
-              {/* Quick Arrow Nav for manual clicking / tapping */}
-              <div className="flex items-center justify-between pt-2 border-t border-slate-200/80 text-xs">
-                <button
-                  onClick={() => jumpToStage(activeIdx - 1)}
-                  disabled={activeIdx === 0}
-                  className={`flex items-center gap-1 font-semibold px-2 py-1 rounded-md transition-colors ${
-                    activeIdx === 0
-                      ? "text-slate-300 cursor-not-allowed"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                  }`}
-                >
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
-                    <path d="M10 13l-5-5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <span>Prev</span>
-                </button>
+              <span className="text-[10px] sm:text-[11px] font-mono text-white/50 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Scroll anywhere to navigate frames
+              </span>
 
-                <span className="text-[10px] sm:text-[11px] font-mono text-slate-400">
-                  Swipe / scroll for next
-                </span>
-
-                <button
-                  onClick={() => jumpToStage(activeIdx + 1)}
-                  disabled={activeIdx === STAGES.length - 1}
-                  className={`flex items-center gap-1 font-semibold px-2 py-1 rounded-md transition-colors ${
-                    activeIdx === STAGES.length - 1
-                      ? "text-slate-300 cursor-not-allowed"
-                      : "text-slate-900 hover:text-[#c8102e] hover:bg-slate-100"
-                  }`}
-                >
-                  <span>Next</span>
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
-                    <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-              </div>
-
+              <button
+                onClick={() => jumpToStage(Math.min(STAGES.length - 1, activeStageIdx + 1))}
+                disabled={activeStageIdx === STAGES.length - 1}
+                className={`flex items-center gap-1 font-semibold px-2 py-1 rounded-md transition-colors ${
+                  activeStageIdx === STAGES.length - 1
+                    ? "text-white/20 cursor-not-allowed"
+                    : "text-white hover:text-emerald-400 hover:bg-white/10"
+                }`}
+              >
+                <span>Next</span>
+                <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M6 3l5 5-5 5"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
             </div>
-
           </div>
-
         </div>
 
-        {/* ── BOTTOM STATUS BAR ── */}
-        <div className="relative z-30 max-w-7xl mx-auto w-full flex items-center justify-between text-[10px] sm:text-xs text-slate-400 pt-1.5 sm:pt-2 border-t border-slate-200/70 font-medium">
-          <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-            Scroll anywhere on screen to journey through all 7 points
-          </span>
-          <span className="font-mono text-slate-500 shrink-0">
-            {activeIdx === STAGES.length - 1 ? "Complete Pole View" : `Step ${activeIdx + 1} of 7`}
-          </span>
+        {/* ── BOTTOM PROGRESS SCRUBBER BAR ─────────────────────────────────── */}
+        <div className="absolute bottom-0 inset-x-0 h-1.5 bg-white/10 z-30">
+          <div
+            className="h-full transition-all duration-100 ease-out"
+            style={{
+              width: `${(currentFrameNum / TOTAL_FRAMES) * 100}%`,
+              backgroundColor: activeStage.accent,
+            }}
+          />
         </div>
 
       </div>
