@@ -208,7 +208,7 @@ export default function ScrollFeatures() {
     >
       {/* ── STICKY VIEWPORT: Stays locked to the screen while scrolling through the 600vh track ── */}
       <div className="sticky top-0 h-screen w-full overflow-hidden flex flex-col justify-between py-4 sm:py-6 px-4 sm:px-8 lg:px-12">
-        
+
         {/* Ambient atmospheric backdrop lighting */}
         <div
           className="absolute inset-0 pointer-events-none transition-all duration-700 ease-out"
@@ -237,11 +237,10 @@ export default function ScrollFeatures() {
                 key={s.id}
                 onClick={() => jumpToStage(idx)}
                 aria-label={`Jump to ${s.title}`}
-                className={`transition-all duration-300 rounded-full flex items-center justify-center text-[10px] font-mono font-bold ${
-                  idx === activeIdx
+                className={`transition-all duration-300 rounded-full flex items-center justify-center text-[10px] font-mono font-bold ${idx === activeIdx
                     ? "w-7 sm:w-8 h-6 text-white shadow-xs"
                     : "w-5 sm:w-6 h-6 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60"
-                }`}
+                  }`}
                 style={{
                   backgroundColor: idx === activeIdx ? current.accent : "transparent",
                 }}
@@ -254,10 +253,10 @@ export default function ScrollFeatures() {
 
         {/* Central Stage: Desktop Split Screen / Mobile Vertical Stack */}
         <div className="relative z-20 flex-1 grid lg:grid-cols-12 gap-4 lg:gap-12 items-center max-w-7xl mx-auto w-full my-auto overflow-hidden">
-          
+
           {/* ── POLE VIEWPORT: Focuses and Zooms to the Specific Component ── */}
           <div className="lg:col-span-7 h-[42vh] sm:h-[48vh] lg:h-[74vh] flex items-center justify-center relative overflow-hidden bg-white/50 rounded-2xl sm:rounded-3xl border border-slate-200/60 shadow-inner">
-            
+
             {/* The Moving Pole Element — Zoom and Origin Shift */}
             <div
               className="relative w-full h-full flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
@@ -354,7 +353,7 @@ export default function ScrollFeatures() {
 
           {/* ── TRANSLUCENT FLOATING CARD: Updates smoothly with each point ── */}
           <div className="lg:col-span-5 relative flex flex-col justify-center">
-            
+
             <div
               key={current.id}
               className="glass-light rounded-2xl sm:rounded-3xl p-4 sm:p-7 lg:p-8 transition-all duration-500 shadow-xl border border-white/90 relative"
@@ -409,11 +408,10 @@ export default function ScrollFeatures() {
                 <button
                   onClick={() => jumpToStage(Math.max(0, activeIdx - 1))}
                   disabled={activeIdx === 0}
-                  className={`flex items-center gap-1 font-semibold ${
-                    activeIdx === 0
+                  className={`flex items-center gap-1 font-semibold ${activeIdx === 0
                       ? "text-slate-300 cursor-not-allowed"
                       : "text-slate-600 hover:text-slate-900"
-                  }`}
+                    }`}
                 >
                   <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
                     <path d="M10 13l-5-5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -428,11 +426,10 @@ export default function ScrollFeatures() {
                 <button
                   onClick={() => jumpToStage(Math.min(STAGES.length - 1, activeIdx + 1))}
                   disabled={activeIdx === STAGES.length - 1}
-                  className={`flex items-center gap-1 font-semibold ${
-                    activeIdx === STAGES.length - 1
+                  className={`flex items-center gap-1 font-semibold ${activeIdx === STAGES.length - 1
                       ? "text-slate-300 cursor-not-allowed"
                       : "text-slate-900 hover:text-[#c8102e]"
-                  }`}
+                    }`}
                 >
                   <span>Next</span>
                   <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
