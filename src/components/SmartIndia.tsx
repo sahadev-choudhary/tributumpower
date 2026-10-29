@@ -239,8 +239,10 @@ export default function SmartIndia() {
         {/* Positive Municipal Callout Banner: "Bring AtmosPOLE™ to Your City" with "Contact Us" */}
         <div className="rounded-3xl bg-gradient-to-r from-emerald-600 to-teal-700 p-8 sm:p-10 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-2 text-center md:text-left">
-            <h3 className="text-xl sm:text-2xl font-black tracking-tight">
-              Bring AtmosPOLE™ to Your City
+            <h3 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
+              Bring AtmosPOLE™
+              <br />
+              to Your City
             </h3>
             <p className="text-xs sm:text-sm text-emerald-100 max-w-xl font-normal leading-relaxed">
               Connect with Tributum Power for corridor pilot assessments, urban energy modeling, and smart city implementation schedules.

@@ -40,11 +40,10 @@ export default function Hero() {
               <span className="gradient-brand">Built into Every Street.</span>
             </h1>
 
-            {/* Trimmed, Punchy Description */}
+            {/* Impactful, Crystal-Clear Description */}
             <p className="text-base sm:text-lg text-slate-600 max-w-xl mx-auto lg:mx-0 leading-relaxed font-normal">
-              India&apos;s urban pollution demands practical, immediate answers.{" "}
-              <strong className="text-slate-900 font-semibold">AtmosPOLE™</strong> replaces ordinary street lamps with
-              solar-powered infrastructure that actively cleans toxic PM2.5 smog with micro-mist, monitors air quality, and lights roads without drawing grid power.
+              Every street in India already has streetlights.{" "}
+              <strong className="text-slate-900 font-semibold">AtmosPOLE™</strong> upgrades them into solar-powered air purifiers that wash toxic PM2.5 smog out of the air with micro-mist, broadcast live AQI data, and illuminate roads — with zero grid power and zero disruption.
             </p>
 
             {/* Key Action Buttons */}
