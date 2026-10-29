@@ -25,8 +25,8 @@ export default function Navbar() {
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "bg-white/85 backdrop-blur-xl border-b border-slate-200/80 shadow-xs py-3.5"
-          : "bg-transparent py-5"
+          ? "bg-white/95 backdrop-blur-xl border-b border-slate-200/80 shadow-xs py-3"
+          : "bg-white/85 backdrop-blur-md border-b border-slate-200/60 shadow-xs py-3.5"
       }`}
     >
       <nav className="max-w-7xl mx-auto px-6 flex items-center justify-between">

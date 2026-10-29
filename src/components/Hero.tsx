@@ -4,37 +4,32 @@ import Image from "next/image";
 
 export default function Hero() {
   return (
-    <section className="relative min-h-[90vh] lg:min-h-screen flex items-center justify-center pt-24 pb-8 sm:pb-12 lg:pt-24 lg:pb-10 px-4 sm:px-6 lg:px-8 overflow-hidden bg-gradient-to-b from-sky-50/80 via-white to-slate-50">
+    <section className="relative min-h-[90vh] lg:min-h-screen flex items-center justify-center pt-24 pb-8 sm:pb-12 lg:pt-24 lg:pb-10 px-4 sm:px-6 lg:px-8 overflow-hidden bg-slate-950">
       
-      {/* ── BACKGROUND VIDEO LAYER (75% VISIBILITY) ───────────────────────── */}
+      {/* ── BACKGROUND VIDEO LAYER (100% FULL VISIBILITY) ───────────────── */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
         <video
           autoPlay
           loop
           muted
           playsInline
-          className="w-full h-full object-cover opacity-75 transition-opacity duration-700"
+          className="w-full h-full object-cover opacity-100"
         >
           <source src="/video/hero.mp4" type="video/mp4" />
           <source src="/video/Video Project 2.mp4" type="video/mp4" />
           <source src="/video/hero-bg.mp4" type="video/mp4" />
           <source src="/video/atmospole.mp4" type="video/mp4" />
-          <source src="/video/hero.webm" type="video/webm" />
         </video>
-        {/* Soft atmospheric gradient wash ensuring crystal-clear text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/20 to-white/50 pointer-events-none" />
+        {/* Contrast overlay: keeps full video visible while making white text razor sharp */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/55 to-black/45 pointer-events-none" />
       </div>
 
-      {/* Radiant positive background glows */}
-      <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-emerald-100/35 rounded-full blur-3xl pointer-events-none z-0" />
-      <div className="absolute top-20 left-10 w-[450px] h-[450px] bg-rose-100/30 rounded-full blur-3xl pointer-events-none z-0" />
-
-      {/* Grid Pattern */}
+      {/* Grid Pattern with subtle glow */}
       <div
-        className="absolute inset-0 opacity-[0.035] pointer-events-none z-0"
+        className="absolute inset-0 opacity-[0.05] pointer-events-none z-0"
         style={{
           backgroundImage:
-            "linear-gradient(#0f172a 1px, transparent 1px), linear-gradient(90deg, #0f172a 1px, transparent 1px)",
+            "linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)",
           backgroundSize: "60px 60px",
         }}
       />
@@ -46,23 +41,23 @@ export default function Hero() {
           <div className="lg:col-span-7 text-center lg:text-left space-y-4 sm:space-y-5">
             
             {/* Positive Mission Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-50/90 border border-emerald-200/70 shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[11px] sm:text-xs font-semibold tracking-wide text-emerald-800">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/20 shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[11px] sm:text-xs font-semibold tracking-wide text-emerald-300">
                 Pioneering Clean Air Infrastructure for India
               </span>
             </div>
 
             {/* Core Headline */}
-            <h1 className="text-3xl sm:text-5xl lg:text-[3.25rem] xl:text-6xl font-black tracking-tight text-slate-900 leading-[1.12]">
+            <h1 className="text-3xl sm:text-5xl lg:text-[3.25rem] xl:text-6xl font-black tracking-tight text-white leading-[1.12] drop-shadow-md">
               A Better Way to Breathe.
               <br />
-              <span className="gradient-brand">A Smarter Way to Build.</span>
+              <span className="text-emerald-400 drop-shadow-sm">A Smarter Way to Build.</span>
             </h1>
 
-            {/* Short, Punchy Description utilizing horizontal width */}
-            <p className="text-sm sm:text-base lg:text-lg text-slate-600 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-normal">
-              <strong className="text-slate-900 font-semibold">AtmosPOLE™</strong> replaces ordinary streetlights with solar-powered smart poles that capture toxic PM2.5 smog with micro-mist, integrate CCTV security, and light roads with zero grid power.
+            {/* Short, White 2-Sentence Description */}
+            <p className="text-sm sm:text-base lg:text-lg text-white/90 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-normal drop-shadow-sm">
+              <strong className="text-white font-semibold">AtmosPOLE™</strong> replaces ordinary streetlights with solar-powered smart infrastructure that actively cleans urban air. It combines micro-mist smog suppression with 24/7 CCTV security and zero-grid roadway illumination.
             </p>
 
             {/* Key Action Buttons — Both 100% visible in full hero section above the fold */}
@@ -78,25 +73,25 @@ export default function Hero() {
               </a>
               <a
                 href="#crisis"
-                className="w-full sm:w-auto px-7 py-3 rounded-full bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold tracking-wide border border-slate-200 transition-all shadow-xs flex items-center justify-center"
+                className="w-full sm:w-auto px-7 py-3 rounded-full bg-white hover:bg-slate-100 text-slate-900 text-sm font-semibold tracking-wide border border-white/60 transition-all shadow-md flex items-center justify-center backdrop-blur-xs"
               >
                 The India Challenge
               </a>
             </div>
 
-            {/* 3 Crisp Highlight Badges — compact & scannable */}
-            <div className="pt-4 sm:pt-5 grid grid-cols-3 gap-2 sm:gap-6 border-t border-slate-200/80 max-w-xl mx-auto lg:mx-0">
+            {/* 3 Crisp Highlight Badges — styled for dark background video */}
+            <div className="pt-4 sm:pt-5 grid grid-cols-3 gap-2 sm:gap-6 border-t border-white/20 max-w-xl mx-auto lg:mx-0">
               <div className="space-y-0.5">
-                <div className="text-lg sm:text-2xl font-black text-slate-900">100%</div>
-                <div className="text-[10px] sm:text-xs text-slate-500 font-medium leading-tight">Solar Self-Powered</div>
+                <div className="text-lg sm:text-2xl font-black text-white drop-shadow-sm">100%</div>
+                <div className="text-[10px] sm:text-xs text-white/80 font-medium leading-tight drop-shadow-xs">Solar Self-Powered</div>
               </div>
-              <div className="space-y-0.5 border-x border-slate-200/80 px-2 sm:px-4">
-                <div className="text-lg sm:text-2xl font-black text-emerald-600">PM2.5</div>
-                <div className="text-[10px] sm:text-xs text-slate-500 font-medium leading-tight">Active Mist Capture</div>
+              <div className="space-y-0.5 border-x border-white/20 px-2 sm:px-4">
+                <div className="text-lg sm:text-2xl font-black text-emerald-400 drop-shadow-sm">PM2.5</div>
+                <div className="text-[10px] sm:text-xs text-white/80 font-medium leading-tight drop-shadow-xs">Active Mist Capture</div>
               </div>
               <div className="space-y-0.5">
-                <div className="text-lg sm:text-2xl font-black text-[#c8102e]">0-Grid</div>
-                <div className="text-[10px] sm:text-xs text-slate-500 font-medium leading-tight">Zero Power Drain</div>
+                <div className="text-lg sm:text-2xl font-black text-rose-400 drop-shadow-sm">0-Grid</div>
+                <div className="text-[10px] sm:text-xs text-white/80 font-medium leading-tight drop-shadow-xs">Zero Power Drain</div>
               </div>
             </div>
 
@@ -105,10 +100,10 @@ export default function Hero() {
           {/* Right Column: High-Res Pole Visual (Desktop only — hidden on mobile for clean clutter-free layout) */}
           <div className="hidden lg:flex lg:col-span-5 justify-center relative">
             {/* Subtle glow circle behind pole */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 sm:w-80 sm:h-80 rounded-full bg-gradient-to-tr from-emerald-100/60 to-rose-100/50 blur-2xl pointer-events-none" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 sm:w-80 sm:h-80 rounded-full bg-emerald-500/20 blur-3xl pointer-events-none" />
 
             {/* Pole image container calibrated to fit viewport */}
-            <div className="relative w-44 sm:w-56 lg:w-64 max-h-[52vh] sm:max-h-[58vh] anim-float drop-shadow-[0_20px_30px_rgba(15,23,42,0.15)] flex items-center justify-center">
+            <div className="relative w-44 sm:w-56 lg:w-64 max-h-[52vh] sm:max-h-[58vh] anim-float drop-shadow-[0_20px_30px_rgba(0,0,0,0.5)] flex items-center justify-center">
               <Image
                 src="/atmospole-studio.png"
                 alt="AtmosPOLE™ Smart Urban Infrastructure"
@@ -127,7 +122,7 @@ export default function Hero() {
                     style={{
                       width: `${22 + i * 6}px`,
                       height: "5px",
-                      background: "rgba(16, 185, 129, 0.25)",
+                      background: "rgba(52, 211, 153, 0.45)",
                       top: `${30 + i * 5}%`,
                       left: i % 2 === 0 ? "-10%" : "auto",
                       right: i % 2 === 1 ? "-10%" : "auto",
@@ -139,11 +134,11 @@ export default function Hero() {
             </div>
 
             {/* Floating Live Badge */}
-            <div className="absolute -bottom-2 sm:bottom-2 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl px-3.5 py-2 shadow-lg flex items-center gap-2.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="absolute -bottom-2 sm:bottom-2 bg-black/60 backdrop-blur-md border border-white/20 rounded-2xl px-3.5 py-2 shadow-xl flex items-center gap-2.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <div className="text-left">
-                <div className="text-[9px] font-mono uppercase tracking-wider text-slate-400">Live Status</div>
-                <div className="text-[11px] sm:text-xs font-bold text-slate-800">AtmosPOLE™ Active & Purifying</div>
+                <div className="text-[9px] font-mono uppercase tracking-wider text-slate-300">Live Status</div>
+                <div className="text-[11px] sm:text-xs font-bold text-white">AtmosPOLE™ Active & Purifying</div>
               </div>
             </div>
 
