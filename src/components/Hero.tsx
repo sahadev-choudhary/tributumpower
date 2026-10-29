@@ -17,6 +17,7 @@ export default function Hero() {
           className="w-full h-full object-cover opacity-40 mix-blend-multiply transition-opacity duration-700"
         >
           <source src="/video/hero.mp4" type="video/mp4" />
+          <source src="/video/video_2b6c1a47 (online-video-cutter.com).mp4" type="video/mp4" />
           <source src="/video/hero-bg.mp4" type="video/mp4" />
           <source src="/video/atmospole.mp4" type="video/mp4" />
           <source src="/video/hero.webm" type="video/webm" />
