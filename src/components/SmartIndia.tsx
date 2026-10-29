@@ -12,7 +12,7 @@ const VISION_CARDS = [
   },
   {
     title: "100 Smart Cities Mission",
-    desc: "Seamlessly connects into Integrated Command and Control Centres (ICCC) via encrypted telemetry for hyper-local environmental tracking.",
+    desc: "Seamlessly connects into Integrated Command and Control Centres (ICCC) for hyper-local environmental telemetry and integrated 24/7 CCTV security surveillance.",
     icon: "🏙️",
     accent: "text-sky-700",
     bg: "bg-sky-50 border-sky-200/80",
@@ -240,9 +240,8 @@ export default function SmartIndia() {
         <div className="rounded-3xl bg-gradient-to-r from-emerald-600 to-teal-700 p-8 sm:p-10 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-2 text-center md:text-left">
             <h3 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
-              Bring AtmosPOLE™
-              <br />
-              to Your City
+              <span className="block">Bring AtmosPOLE™</span>
+              <span className="block">to Your City</span>
             </h3>
             <p className="text-xs sm:text-sm text-emerald-100 max-w-xl font-normal leading-relaxed">
               Connect with Tributum Power for corridor pilot assessments, urban energy modeling, and smart city implementation schedules.

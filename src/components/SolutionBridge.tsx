@@ -41,6 +41,7 @@ export default function SolutionBridge() {
                 "Draws heavy grid electricity 365 nights a year",
                 "Passive asset during toxic winter smog peaks",
                 "No sensor feedback, air monitoring, or citizen transparency",
+                "No CCTV surveillance — requires separate poles for municipal security",
               ].map((item, idx) => (
                 <li key={idx} className="flex items-start gap-3 text-xs sm:text-sm text-slate-500">
                   <span className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-[10px] mt-0.5 shrink-0">
@@ -66,6 +67,7 @@ export default function SolutionBridge() {
               {[
                 "High-efficiency LED illumination + active mist smog suppression",
                 "100% solar self-powered with zero operating grid electricity bills",
+                "Integrated CCTV surveillance camera for smart city safety & traffic monitoring",
                 "Real-time dual PM2.5/PM10 sensors with public AQI screen",
                 "Plug-and-play retrofit: exact same footprint as existing poles",
               ].map((item, idx) => (

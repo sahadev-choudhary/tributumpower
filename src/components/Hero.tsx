@@ -42,7 +42,7 @@ export default function Hero() {
 
             {/* Short, Punchy Description */}
             <p className="text-base sm:text-lg text-slate-600 max-w-lg mx-auto lg:mx-0 leading-relaxed font-normal">
-              <strong className="text-slate-900 font-semibold">AtmosPOLE™</strong> replaces ordinary streetlights with solar-powered smart poles that spray micro-mist to capture toxic PM2.5 smog — lighting roads with zero grid power.
+              <strong className="text-slate-900 font-semibold">AtmosPOLE™</strong> replaces ordinary streetlights with solar-powered smart poles that capture toxic PM2.5 smog with micro-mist, integrate CCTV security, and light roads with zero grid power.
             </p>
 
             {/* Key Action Buttons */}

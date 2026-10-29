@@ -80,7 +80,7 @@ export default function CrisisSection() {
             
             <div className="bg-emerald-50/70 border border-emerald-200/70 rounded-2xl p-5 card-hover">
               <div className="flex items-center gap-3 mb-2">
-                <span className="px-3 h-8 rounded-xl bg-emerald-100/90 text-emerald-800 font-black text-xs sm:text-sm flex items-center justify-center shrink-0 shadow-xs">
+                <span className="px-3.5 py-1.5 min-w-[78px] whitespace-nowrap rounded-xl bg-emerald-100/90 text-emerald-800 font-black text-xs sm:text-sm inline-flex items-center justify-center shrink-0 shadow-xs">
                   14 Cities
                 </span>
                 <h4 className="text-sm font-bold text-slate-800">Global Ranking Alert</h4>
@@ -92,7 +92,7 @@ export default function CrisisSection() {
 
             <div className="bg-amber-50/70 border border-amber-200/70 rounded-2xl p-5 card-hover">
               <div className="flex items-center gap-3 mb-2">
-                <span className="px-3 h-8 rounded-xl bg-amber-100/90 text-amber-800 font-black text-xs sm:text-sm flex items-center justify-center shrink-0 shadow-xs">
+                <span className="px-3.5 py-1.5 min-w-[78px] whitespace-nowrap rounded-xl bg-amber-100/90 text-amber-800 font-black text-xs sm:text-sm inline-flex items-center justify-center shrink-0 shadow-xs">
                   35M+
                 </span>
                 <h4 className="text-sm font-bold text-slate-800">Streetlight Opportunity</h4>
@@ -104,7 +104,7 @@ export default function CrisisSection() {
 
             <div className="bg-sky-50/70 border border-sky-200/70 rounded-2xl p-5 card-hover sm:col-span-2 lg:col-span-1">
               <div className="flex items-center gap-3 mb-2">
-                <span className="px-3 h-8 rounded-xl bg-sky-100/90 text-sky-800 font-black text-xs sm:text-sm flex items-center justify-center shrink-0 shadow-xs">
+                <span className="px-3.5 py-1.5 min-w-[78px] whitespace-nowrap rounded-xl bg-sky-100/90 text-sky-800 font-black text-xs sm:text-sm inline-flex items-center justify-center shrink-0 shadow-xs">
                   0-Grid
                 </span>
                 <h4 className="text-sm font-bold text-slate-800">Clean Energy Independence</h4>

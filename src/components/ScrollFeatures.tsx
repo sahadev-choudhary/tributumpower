@@ -13,7 +13,7 @@ interface FeatureStage {
   badgeText: string;
   description: string;
   highlightText: string;
-  // Precise camera coordinates on the 422x1024 pole image
+  // Camera transform parameters on the 422x1024 pole image
   originX: number; // percentage (0 - 100)
   originY: number; // percentage (0 - 100)
   scaleDesktop: number;
@@ -33,7 +33,7 @@ const STAGES: FeatureStage[] = [
     badgeBg: "bg-amber-100",
     badgeText: "text-amber-800",
     description:
-      "Mounted at the very crown of the pole, the monocrystalline solar array harvests daylight to power lighting, misting, sensors, and display with zero operating grid electricity cost.",
+      "Mounted at the crown of the pole, the monocrystalline solar array harvests daylight to power lighting, CCTV, misting, sensors, and display with zero operating grid electricity cost.",
     highlightText: "100% self-powered by daylight with integrated overnight battery reserve",
     originX: 50,
     originY: 4,
@@ -63,8 +63,27 @@ const STAGES: FeatureStage[] = [
     reticleLabel: "Right LED Luminaire",
   },
   {
-    id: "mist-left",
+    id: "cctv",
     stepNum: "03",
+    category: "SMART CITY SECURITY",
+    title: "Integrated CCTV Surveillance",
+    accent: "#4f46e5",
+    badgeBg: "bg-indigo-100",
+    badgeText: "text-indigo-800",
+    description:
+      "Mounted centrally right below the solar crown, the high-definition smart camera provides 24/7 roadway and pedestrian security oversight without requiring separate dedicated surveillance poles.",
+    highlightText: "Direct feed integration for Smart City Command Centres (ICCC) and traffic safety",
+    originX: 50,
+    originY: 10,
+    scaleDesktop: 2.9,
+    scaleMobile: 2.4,
+    reticleX: 50,
+    reticleY: 9.8,
+    reticleLabel: "HD Security Camera",
+  },
+  {
+    id: "mist-left",
+    stepNum: "04",
     category: "AIR PURIFICATION",
     title: "Active Mist Smog Suppression",
     accent: "#0284c7",
@@ -83,7 +102,7 @@ const STAGES: FeatureStage[] = [
   },
   {
     id: "sensors",
-    stepNum: "04",
+    stepNum: "05",
     category: "CONTINUOUS MONITORING",
     title: "Dual Air Quality Sensors",
     accent: "#dc2626",
@@ -102,7 +121,7 @@ const STAGES: FeatureStage[] = [
   },
   {
     id: "screen",
-    stepNum: "05",
+    stepNum: "06",
     category: "CITIZEN TRANSPARENCY",
     title: "Public Digital Display",
     accent: "#7c3aed",
@@ -121,7 +140,7 @@ const STAGES: FeatureStage[] = [
   },
   {
     id: "full-pole",
-    stepNum: "06",
+    stepNum: "07",
     category: "UNIFIED URBAN ASSET",
     title: "The Complete Smart Pole",
     accent: "#16a34a",
@@ -140,8 +159,17 @@ const STAGES: FeatureStage[] = [
 
 export default function ScrollFeatures() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const stickyRef = useRef<HTMLDivElement>(null);
   const [activeIdx, setActiveIdx] = useState<number>(0);
+  const activeIdxRef = useRef<number>(0);
   const [isMobile, setIsMobile] = useState<boolean>(false);
+  const lastStepTimeRef = useRef<number>(0);
+  const touchStartYRef = useRef<number | null>(null);
+  const touchStartXRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    activeIdxRef.current = activeIdx;
+  }, [activeIdx]);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
@@ -150,10 +178,22 @@ export default function ScrollFeatures() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Natural scroll tracking calibrated for both desktop and mobile:
-  // Container has 360vh height. The sticky section stays locked on screen.
-  // Scrolling naturally advances through points 1 to 6.
-  // Only after point 6 has been completed does the page scroll to the next section!
+  // Jump to specific stage
+  const jumpToStage = useCallback((idx: number) => {
+    const targetIdx = Math.max(0, Math.min(STAGES.length - 1, idx));
+    setActiveIdx(targetIdx);
+    activeIdxRef.current = targetIdx;
+
+    const el = containerRef.current;
+    if (!el) return;
+    const scrollableDistance = el.offsetHeight - window.innerHeight;
+    if (scrollableDistance > 0) {
+      const targetScroll = el.offsetTop + (targetIdx / (STAGES.length - 1)) * scrollableDistance;
+      window.scrollTo({ top: targetScroll, behavior: "smooth" });
+    }
+  }, []);
+
+  // Sync index with scroll position when scrolling naturally
   const handleScroll = useCallback(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -165,13 +205,13 @@ export default function ScrollFeatures() {
 
     if (scrollableDistance <= 0) return;
 
-    // Progress 0 to 1 across the track
     const progress = Math.max(0, Math.min(1, currentScrolled / scrollableDistance));
     const total = STAGES.length;
     const rawIndex = progress * total;
     const calculatedIndex = Math.min(total - 1, Math.max(0, Math.floor(rawIndex)));
 
     setActiveIdx(calculatedIndex);
+    activeIdxRef.current = calculatedIndex;
   }, []);
 
   useEffect(() => {
@@ -180,14 +220,116 @@ export default function ScrollFeatures() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
 
-  // Jump to specific feature on click
-  const jumpToStage = (idx: number) => {
-    const el = containerRef.current;
-    if (!el) return;
-    const scrollableDistance = el.offsetHeight - window.innerHeight;
-    const targetScroll = el.offsetTop + (idx / (STAGES.length - 1)) * scrollableDistance;
-    window.scrollTo({ top: targetScroll, behavior: "smooth" });
-  };
+  // ── NON-PASSIVE TOUCH & WHEEL PINNING LOCK ──────────────────────────────
+  // Prevents mobile screen from flinging past before all 7 features are seen.
+  // Each swipe up/down cleanly steps through features one by one!
+  useEffect(() => {
+    const stickyEl = stickyRef.current;
+    if (!stickyEl) return;
+
+    const COOLDOWN_MS = 380;
+
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartYRef.current = e.touches[0].clientY;
+      touchStartXRef.current = e.touches[0].clientX;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (touchStartYRef.current === null) return;
+      const el = containerRef.current;
+      if (!el) return;
+
+      const rect = el.getBoundingClientRect();
+      const windowH = window.innerHeight;
+      // Section is active if pinned or taking up the screen
+      const isPinned = rect.top <= 15 && rect.bottom >= windowH - 15;
+      if (!isPinned) return;
+
+      const currentY = e.touches[0].clientY;
+      const currentX = e.touches[0].clientX;
+      const diffY = touchStartYRef.current - currentY; // positive = swipe up (scrolling down)
+      const diffX = (touchStartXRef.current ?? currentX) - currentX;
+
+      // Only handle vertical swipes
+      if (Math.abs(diffX) > Math.abs(diffY)) return;
+
+      const now = Date.now();
+
+      if (diffY > 18) {
+        // Swiping UP -> advancing to next feature
+        if (activeIdxRef.current < STAGES.length - 1) {
+          // MANDATE: Lock the screen! Do not let it scroll past!
+          if (e.cancelable) e.preventDefault();
+          if (now - lastStepTimeRef.current > COOLDOWN_MS) {
+            lastStepTimeRef.current = now;
+            touchStartYRef.current = currentY;
+            jumpToStage(activeIdxRef.current + 1);
+          }
+        }
+        // If at stage 07 (last feature), native scroll proceeds down to next section
+      } else if (diffY < -18) {
+        // Swiping DOWN -> going back to previous feature
+        if (activeIdxRef.current > 0) {
+          // MANDATE: Lock the screen! Step backward!
+          if (e.cancelable) e.preventDefault();
+          if (now - lastStepTimeRef.current > COOLDOWN_MS) {
+            lastStepTimeRef.current = now;
+            touchStartYRef.current = currentY;
+            jumpToStage(activeIdxRef.current - 1);
+          }
+        }
+        // If at stage 01, native scroll proceeds up to previous section
+      }
+    };
+
+    const onTouchEnd = () => {
+      touchStartYRef.current = null;
+      touchStartXRef.current = null;
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      const el = containerRef.current;
+      if (!el) return;
+
+      const rect = el.getBoundingClientRect();
+      const windowH = window.innerHeight;
+      const isPinned = rect.top <= 15 && rect.bottom >= windowH - 15;
+      if (!isPinned) return;
+
+      const now = Date.now();
+
+      if (e.deltaY > 15) {
+        if (activeIdxRef.current < STAGES.length - 1) {
+          if (e.cancelable) e.preventDefault();
+          if (now - lastStepTimeRef.current > COOLDOWN_MS) {
+            lastStepTimeRef.current = now;
+            jumpToStage(activeIdxRef.current + 1);
+          }
+        }
+      } else if (e.deltaY < -15) {
+        if (activeIdxRef.current > 0) {
+          if (e.cancelable) e.preventDefault();
+          if (now - lastStepTimeRef.current > COOLDOWN_MS) {
+            lastStepTimeRef.current = now;
+            jumpToStage(activeIdxRef.current - 1);
+          }
+        }
+      }
+    };
+
+    // Attach non-passive listeners to guarantee preventDefault works
+    stickyEl.addEventListener("touchstart", onTouchStart, { passive: true });
+    stickyEl.addEventListener("touchmove", onTouchMove, { passive: false });
+    stickyEl.addEventListener("touchend", onTouchEnd, { passive: true });
+    stickyEl.addEventListener("wheel", onWheel, { passive: false });
+
+    return () => {
+      stickyEl.removeEventListener("touchstart", onTouchStart);
+      stickyEl.removeEventListener("touchmove", onTouchMove);
+      stickyEl.removeEventListener("touchend", onTouchEnd);
+      stickyEl.removeEventListener("wheel", onWheel);
+    };
+  }, [jumpToStage]);
 
   const current = STAGES[activeIdx] || STAGES[0];
   const activeScale = isMobile ? current.scaleMobile : current.scaleDesktop;
@@ -197,13 +339,14 @@ export default function ScrollFeatures() {
       ref={containerRef}
       id="features"
       className="relative bg-gradient-to-b from-slate-50 via-sky-50/20 to-white"
-      /* Calibrated 360vh scroll track: ensures the section stays pinned on screen
-         and mandatorily walks the user through all 6 points on phone and desktop */
-      style={{ height: "360vh" }}
+      /* Calibrated track locks the section on screen across all 7 stages */
+      style={{ height: "420vh" }}
     >
-      {/* ── STICKY VIEWPORT: Pinned to screen while user scrolls through the 360vh track ── */}
-      <div className="sticky top-0 h-screen w-full overflow-hidden flex flex-col justify-between py-3 sm:py-6 px-4 sm:px-8 lg:px-12">
-        
+      {/* ── STICKY VIEWPORT: Remains pinned to the screen throughout all 7 stages ── */}
+      <div
+        ref={stickyRef}
+        className="sticky top-0 h-screen w-full overflow-hidden flex flex-col justify-between py-3 sm:py-5 px-4 sm:px-8 lg:px-12 select-none"
+      >
         {/* Ambient atmospheric backdrop lighting */}
         <div
           className="absolute inset-0 pointer-events-none transition-all duration-700 ease-out"
@@ -248,10 +391,10 @@ export default function ScrollFeatures() {
         </div>
 
         {/* ── CENTRAL STAGE: TWO SEPARATE GRID COLUMNS (POLE BESIDE TEXT — NEVER OVERLAPPING) ── */}
-        <div className="relative z-20 flex-1 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-10 items-center my-auto overflow-hidden">
+        <div className="relative z-20 flex-1 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6 lg:gap-10 items-center my-auto overflow-hidden">
           
-          {/* ── COLUMN 1 (Left 7 Cols on Desktop / Top 50% on Mobile): THE POLE ── */}
-          <div className="lg:col-span-7 h-[46vh] sm:h-[50vh] lg:h-[72vh] w-full flex items-center justify-center relative overflow-hidden bg-white/40 rounded-2xl sm:rounded-3xl border border-slate-200/60 shadow-inner">
+          {/* ── COLUMN 1 (Left 7 Cols on Desktop / Top Half on Mobile): THE POLE ── */}
+          <div className="lg:col-span-7 h-[42vh] sm:h-[48vh] lg:h-[72vh] w-full flex items-center justify-center relative overflow-hidden bg-white/40 rounded-2xl sm:rounded-3xl border border-slate-200/60 shadow-inner">
             
             {/* The Moving Pole Element — Zoom and Origin Shift */}
             <div
@@ -295,6 +438,16 @@ export default function ScrollFeatures() {
                       />
                     </span>
                   </div>
+                )}
+
+                {/* CCTV Scan Line / Pulse Glow when CCTV Stage is Active */}
+                {current.id === "cctv" && (
+                  <div
+                    className="absolute top-[8%] left-[38%] right-[38%] h-[32px] rounded-full pointer-events-none opacity-60 animate-pulse"
+                    style={{
+                      boxShadow: "0 0 25px rgba(79, 70, 229, 0.8)",
+                    }}
+                  />
                 )}
 
                 {/* Animated Mist Sprays when Left Mist Stage is Active */}
@@ -347,12 +500,12 @@ export default function ScrollFeatures() {
             </div>
           </div>
 
-          {/* ── COLUMN 2 (Right 5 Cols on Desktop / Bottom 50% on Mobile): THE TEXT (BESIDE THE POLE) ── */}
+          {/* ── COLUMN 2 (Right 5 Cols on Desktop / Bottom Half on Mobile): THE TEXT (BESIDE THE POLE) ── */}
           <div className="lg:col-span-5 w-full flex flex-col justify-center">
             
             <div
               key={current.id}
-              className="p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl bg-white/80 backdrop-blur-md border border-white/90 shadow-xl transition-all duration-500 relative"
+              className="p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl bg-white/85 backdrop-blur-md border border-white/90 shadow-xl transition-all duration-500 relative"
             >
               {/* Decorative top color bar */}
               <div
@@ -361,30 +514,30 @@ export default function ScrollFeatures() {
               />
 
               {/* Category Pill & Step Counter */}
-              <div className="flex items-center justify-between mb-2 sm:mb-3 pt-1">
+              <div className="flex items-center justify-between mb-1.5 sm:mb-3 pt-1">
                 <span
                   className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold tracking-wider uppercase ${current.badgeBg} ${current.badgeText}`}
                 >
                   {current.category}
                 </span>
                 <span className="text-[11px] sm:text-xs font-mono font-semibold text-slate-400">
-                  {current.stepNum} of 06
+                  {current.stepNum} of 07
                 </span>
               </div>
 
               {/* Title */}
-              <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight leading-snug mb-2 sm:mb-3">
+              <h3 className="text-lg sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight leading-snug mb-1.5 sm:mb-3">
                 {current.title}
               </h3>
 
-              {/* Trimmed Description */}
-              <p className="text-xs sm:text-sm lg:text-base text-slate-600 leading-relaxed mb-3 sm:mb-4">
+              {/* Description */}
+              <p className="text-xs sm:text-sm lg:text-base text-slate-600 leading-relaxed mb-2.5 sm:mb-4">
                 {current.description}
               </p>
 
               {/* Punchy Highlight Pill */}
               <div
-                className="rounded-xl px-3.5 py-2 sm:py-2.5 flex items-start gap-2.5 border transition-colors mb-3 sm:mb-4"
+                className="rounded-xl px-3.5 py-2 sm:py-2.5 flex items-start gap-2.5 border transition-colors mb-2.5 sm:mb-4"
                 style={{
                   backgroundColor: `${current.accent}0d`,
                   borderColor: `${current.accent}25`,
@@ -399,15 +552,15 @@ export default function ScrollFeatures() {
                 </span>
               </div>
 
-              {/* Quick Arrow Nav for manual clicking */}
-              <div className="flex items-center justify-between pt-2.5 border-t border-slate-200/80 text-xs">
+              {/* Quick Arrow Nav for manual clicking / tapping */}
+              <div className="flex items-center justify-between pt-2 border-t border-slate-200/80 text-xs">
                 <button
-                  onClick={() => jumpToStage(Math.max(0, activeIdx - 1))}
+                  onClick={() => jumpToStage(activeIdx - 1)}
                   disabled={activeIdx === 0}
-                  className={`flex items-center gap-1 font-semibold ${
+                  className={`flex items-center gap-1 font-semibold px-2 py-1 rounded-md transition-colors ${
                     activeIdx === 0
                       ? "text-slate-300 cursor-not-allowed"
-                      : "text-slate-600 hover:text-slate-900"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                   }`}
                 >
                   <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
@@ -417,16 +570,16 @@ export default function ScrollFeatures() {
                 </button>
 
                 <span className="text-[10px] sm:text-[11px] font-mono text-slate-400">
-                  Scroll down for next
+                  Swipe / scroll for next
                 </span>
 
                 <button
-                  onClick={() => jumpToStage(Math.min(STAGES.length - 1, activeIdx + 1))}
+                  onClick={() => jumpToStage(activeIdx + 1)}
                   disabled={activeIdx === STAGES.length - 1}
-                  className={`flex items-center gap-1 font-semibold ${
+                  className={`flex items-center gap-1 font-semibold px-2 py-1 rounded-md transition-colors ${
                     activeIdx === STAGES.length - 1
                       ? "text-slate-300 cursor-not-allowed"
-                      : "text-slate-900 hover:text-[#c8102e]"
+                      : "text-slate-900 hover:text-[#c8102e] hover:bg-slate-100"
                   }`}
                 >
                   <span>Next</span>
@@ -443,13 +596,13 @@ export default function ScrollFeatures() {
         </div>
 
         {/* ── BOTTOM STATUS BAR ── */}
-        <div className="relative z-30 max-w-7xl mx-auto w-full flex items-center justify-between text-[10px] sm:text-xs text-slate-400 pt-2 border-t border-slate-200/70 font-medium">
+        <div className="relative z-30 max-w-7xl mx-auto w-full flex items-center justify-between text-[10px] sm:text-xs text-slate-400 pt-1.5 sm:pt-2 border-t border-slate-200/70 font-medium">
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-            Scroll anywhere on screen to journey through all 6 points
+            Scroll anywhere on screen to journey through all 7 points
           </span>
           <span className="font-mono text-slate-500 shrink-0">
-            {activeIdx === STAGES.length - 1 ? "Complete Pole View" : `Step ${activeIdx + 1} of 6`}
+            {activeIdx === STAGES.length - 1 ? "Complete Pole View" : `Step ${activeIdx + 1} of 7`}
           </span>
         </div>
 
