@@ -33,11 +33,11 @@ export default function Hero() {
               </span>
             </div>
 
-            {/* Core Headline - Clear & Impactful */}
+            {/* Core Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-[1.1]">
-              Streetlights That Actively
+              A Better Way to Breathe.
               <br />
-              <span className="gradient-brand">Clean The Air We Breathe.</span>
+              <span className="gradient-brand">A Smarter Way to Build.</span>
             </h1>
 
             {/* Short, Punchy Description */}
