@@ -33,17 +33,16 @@ export default function Hero() {
               </span>
             </div>
 
-            {/* Core Headline */}
+            {/* Core Headline - Clear & Impactful */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-[1.1]">
-              Clean Air for Every City.
+              Streetlights That Actively
               <br />
-              <span className="gradient-brand">Built into Every Street.</span>
+              <span className="gradient-brand">Clean The Air We Breathe.</span>
             </h1>
 
-            {/* Impactful, Crystal-Clear Description */}
-            <p className="text-base sm:text-lg text-slate-600 max-w-xl mx-auto lg:mx-0 leading-relaxed font-normal">
-              Every street in India already has streetlights.{" "}
-              <strong className="text-slate-900 font-semibold">AtmosPOLE™</strong> upgrades them into solar-powered air purifiers that wash toxic PM2.5 smog out of the air with micro-mist, broadcast live AQI data, and illuminate roads — with zero grid power and zero disruption.
+            {/* Short, Punchy Description */}
+            <p className="text-base sm:text-lg text-slate-600 max-w-lg mx-auto lg:mx-0 leading-relaxed font-normal">
+              <strong className="text-slate-900 font-semibold">AtmosPOLE™</strong> replaces ordinary streetlights with solar-powered smart poles that spray micro-mist to capture toxic PM2.5 smog — lighting roads with zero grid power.
             </p>
 
             {/* Key Action Buttons */}
