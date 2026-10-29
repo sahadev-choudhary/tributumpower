@@ -102,8 +102,8 @@ export default function Hero() {
 
           </div>
 
-          {/* Right Column: High-Res Pole Visual (calibrated height to fit screen) */}
-          <div className="lg:col-span-5 flex justify-center relative">
+          {/* Right Column: High-Res Pole Visual (Desktop only — hidden on mobile for clean clutter-free layout) */}
+          <div className="hidden lg:flex lg:col-span-5 justify-center relative">
             {/* Subtle glow circle behind pole */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 sm:w-80 sm:h-80 rounded-full bg-gradient-to-tr from-emerald-100/60 to-rose-100/50 blur-2xl pointer-events-none" />
 
