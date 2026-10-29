@@ -9,3 +9,4 @@ Supported file names (any of these will automatically play):
 4. `hero.webm`
 
 The hero section will automatically play the video in a seamless loop with 40% opacity in the background.
+

@@ -6,15 +6,14 @@ export default function Hero() {
   return (
     <section className="relative min-h-[90vh] lg:min-h-screen flex items-center justify-center pt-24 pb-8 sm:pb-12 lg:pt-24 lg:pb-10 px-4 sm:px-6 lg:px-8 overflow-hidden bg-gradient-to-b from-sky-50/80 via-white to-slate-50">
       
-      {/* ── BACKGROUND VIDEO LAYER (40% OPACITY) ───────────────────────── */}
-      {/* Drops file into /public/video/hero.mp4 to play automatically */}
+      {/* ── BACKGROUND VIDEO LAYER (75% VISIBILITY) ───────────────────────── */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
         <video
           autoPlay
           loop
           muted
           playsInline
-          className="w-full h-full object-cover opacity-40 mix-blend-multiply transition-opacity duration-700"
+          className="w-full h-full object-cover opacity-75 transition-opacity duration-700"
         >
           <source src="/video/hero.mp4" type="video/mp4" />
           <source src="/video/video_2b6c1a47 (online-video-cutter.com).mp4" type="video/mp4" />
@@ -23,7 +22,7 @@ export default function Hero() {
           <source src="/video/hero.webm" type="video/webm" />
         </video>
         {/* Soft atmospheric gradient wash ensuring crystal-clear text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-sky-50/60 via-white/50 to-slate-50/80 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/20 to-white/50 pointer-events-none" />
       </div>
 
       {/* Radiant positive background glows */}
