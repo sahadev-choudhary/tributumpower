@@ -7,72 +7,72 @@ const VISION_CARDS = [
     title: "National Clean Air Programme",
     desc: "Directly assists Indian municipal corporations in meeting NCAP 40% PM reduction targets through active street-level suppression.",
     icon: "🌱",
-    accent: "text-emerald-700",
-    bg: "bg-emerald-50 border-emerald-200/80",
+    accent: "text-emerald-500",
+    bg: "bg-emerald-500/10 border-emerald-500/25",
   },
   {
     title: "100 Smart Cities Mission",
     desc: "Seamlessly connects into Integrated Command and Control Centres (ICCC) for hyper-local environmental telemetry and integrated 24/7 CCTV security surveillance.",
     icon: "🏙️",
-    accent: "text-sky-700",
-    bg: "bg-sky-50 border-sky-200/80",
+    accent: "text-sky-500",
+    bg: "bg-sky-500/10 border-sky-500/25",
   },
   {
     title: "Zero Disruption Rollout",
     desc: "Standardized bolt-down baseplate matches existing street pole foundations. One pole swapped in under two hours with zero road redesign.",
     icon: "⚡",
-    accent: "text-amber-700",
-    bg: "bg-amber-50 border-amber-200/80",
+    accent: "text-amber-500",
+    bg: "bg-amber-500/10 border-amber-500/25",
   },
 ];
 
 export default function SmartIndia() {
   return (
-    <section id="vision" className="py-24 px-6 bg-white relative overflow-hidden">
+    <section id="vision" className="py-24 px-6 bg-[var(--bg-primary)] border-t border-[var(--border-subtle)] relative overflow-hidden transition-colors">
       <div className="max-w-7xl mx-auto">
         
         {/* Section Header */}
         <div className="max-w-3xl mb-14 text-center sm:text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold tracking-wide mb-3">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-500 text-xs font-semibold tracking-wide mb-3">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             Urban Vision
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[var(--text-primary)] tracking-tight leading-tight">
             A Developing India Deserves
             <br />
-            <span className="gradient-brand">World-Class Clean Streets.</span>
+            <span className="text-[#c8102e]">World-Class Clean Streets.</span>
           </h2>
-          <p className="text-slate-600 text-base mt-3 leading-relaxed max-w-2xl">
+          <p className="text-[var(--text-secondary)] text-base mt-3 leading-relaxed max-w-2xl">
             India is modernizing at breathtaking speed. AtmosPOLE™ ensures that industrial progress and public health go hand in hand, turning roadway corridors into active purification corridors.
           </p>
         </div>
 
-        {/* Visual Street Deployment Showcase */}
+        {/* Visual Street Deployment Showcase with video-deployment.mp4 */}
         <div className="grid lg:grid-cols-12 gap-8 items-center mb-16">
           
-          {/* Real Street Photo (Left 6 Cols) */}
-          <div className="lg:col-span-6 relative rounded-3xl overflow-hidden shadow-2xl border border-slate-200 group">
+          {/* Left 6 Cols: Video Deployment Player matching Image 3 */}
+          <div className="lg:col-span-6 relative rounded-3xl overflow-hidden shadow-2xl border border-[var(--border-card)] group bg-black">
             <div className="relative w-full h-[380px] sm:h-[460px]">
-              <Image
-                src="/image/Atmos_closeup.jpg"
-                alt="AtmosPOLE™ High-Definition Closeup and Field Deployment View"
-                fill
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                priority
-                className="object-cover group-hover:scale-102 transition-transform duration-700"
+              <video
+                src="/video-deployment.mp4"
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="w-full h-full object-cover block group-hover:scale-102 transition-transform duration-700"
               />
             </div>
-            {/* Overlay badge */}
-            <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md rounded-2xl p-4 border border-white/60 shadow-lg flex items-center justify-between">
+            {/* Overlay badge matching Image 3 */}
+            <div className="absolute bottom-4 left-4 right-4 bg-white/95 dark:bg-slate-900/90 backdrop-blur-md rounded-2xl p-4 border border-slate-200/60 dark:border-white/10 shadow-lg flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold block">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold block">
                   High-Resolution Engineering View
                 </span>
-                <span className="text-xs font-bold text-slate-900">
+                <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
                   AtmosPOLE™ Architectural Close-up & Active Misting
                 </span>
               </div>
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0 ml-2" />
             </div>
           </div>
 
@@ -81,16 +81,16 @@ export default function SmartIndia() {
             {VISION_CARDS.map((v, i) => (
               <div
                 key={i}
-                className={`p-6 rounded-2xl border ${v.bg} shadow-xs card-hover flex items-start gap-4`}
+                className={`p-6 rounded-2xl border ${v.bg} shadow-xs card-hover flex items-start gap-4 transition-all`}
               >
-                <div className="text-2xl shrink-0 p-2.5 bg-white rounded-xl shadow-xs">
+                <div className="text-2xl shrink-0 p-2.5 bg-[var(--bg-card)] rounded-xl shadow-xs border border-[var(--border-subtle)]">
                   {v.icon}
                 </div>
                 <div>
                   <h3 className={`text-base font-bold ${v.accent} mb-1`}>
                     {v.title}
                   </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                  <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed font-normal">
                     {v.desc}
                   </p>
                 </div>
@@ -104,27 +104,27 @@ export default function SmartIndia() {
         <div className="mb-16">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-50 border border-sky-200 text-sky-800 text-xs font-semibold tracking-wide mb-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/25 text-sky-500 text-xs font-semibold tracking-wide mb-2">
                 <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
                 Live Demonstrations & Media
               </div>
-              <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              <h3 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] tracking-tight">
                 See AtmosPOLE™ in Action
               </h3>
             </div>
-            <p className="text-xs sm:text-sm text-slate-500 max-w-md">
+            <p className="text-xs sm:text-sm text-[var(--text-muted)] max-w-md">
               Watch recent on-ground coverage, field tests, and video interviews highlighting the pole&apos;s real-time particulate treatment.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
             
-            {/* Video Placeholder 1: Facebook Reel */}
+            {/* Video Card 1: Facebook Reel */}
             <a
               href="https://www.facebook.com/reel/1045563091578052"
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative bg-white border border-slate-200 rounded-3xl p-6 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden"
+              className="group relative bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl p-6 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden"
             >
               <div className="relative w-full h-56 sm:h-64 rounded-2xl overflow-hidden bg-slate-900 mb-5">
                 <Image
@@ -164,24 +164,24 @@ export default function SmartIndia() {
               </div>
 
               <div>
-                <h4 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors mb-1.5 flex items-center justify-between">
+                <h4 className="text-base font-bold text-[var(--text-primary)] group-hover:text-blue-500 transition-colors mb-1.5 flex items-center justify-between">
                   <span>AtmosPOLE™ Live Coverage Video</span>
-                  <span className="text-xs text-blue-600 font-semibold group-hover:translate-x-1 transition-transform">
+                  <span className="text-xs text-blue-500 font-semibold group-hover:translate-x-1 transition-transform">
                     Watch Video ↗
                   </span>
                 </h4>
-                <p className="text-xs text-slate-500 leading-relaxed font-normal">
+                <p className="text-xs text-[var(--text-muted)] leading-relaxed font-normal">
                   Watch the live broadcast interview demonstrating how the smart pole operates on active roads with real-time mist smog suppression.
                 </p>
               </div>
             </a>
 
-            {/* Video Placeholder 2: Instagram Reel */}
+            {/* Video Card 2: Instagram Reel */}
             <a
               href="https://www.instagram.com/reels/DcfKu6DBrRW/"
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative bg-white border border-slate-200 rounded-3xl p-6 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden"
+              className="group relative bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl p-6 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden"
             >
               <div className="relative w-full h-56 sm:h-64 rounded-2xl overflow-hidden bg-slate-900 mb-5">
                 <Image
@@ -221,13 +221,13 @@ export default function SmartIndia() {
               </div>
 
               <div>
-                <h4 className="text-base font-bold text-slate-900 group-hover:text-rose-600 transition-colors mb-1.5 flex items-center justify-between">
+                <h4 className="text-base font-bold text-[var(--text-primary)] group-hover:text-rose-500 transition-colors mb-1.5 flex items-center justify-between">
                   <span>AtmosPOLE™ Instagram Feature</span>
-                  <span className="text-xs text-rose-600 font-semibold group-hover:translate-x-1 transition-transform">
+                  <span className="text-xs text-rose-500 font-semibold group-hover:translate-x-1 transition-transform">
                     Watch Reel ↗
                   </span>
                 </h4>
-                <p className="text-xs text-slate-500 leading-relaxed font-normal">
+                <p className="text-xs text-[var(--text-muted)] leading-relaxed font-normal">
                   Explore how AtmosPOLE™ tackles India&apos;s urban air challenge, showcasing the active misting system and real-time public telemetry.
                 </p>
               </div>
@@ -236,7 +236,7 @@ export default function SmartIndia() {
           </div>
         </div>
 
-        {/* Positive Municipal Callout Banner: "Bring AtmosPOLE™ to Your City" with "Contact Us" */}
+        {/* Positive Municipal Callout Banner */}
         <div className="rounded-3xl bg-gradient-to-r from-emerald-600 to-teal-700 p-8 sm:p-10 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-2 text-center md:text-left">
             <h3 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">

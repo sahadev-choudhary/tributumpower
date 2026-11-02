@@ -1,0 +1,414 @@
+/* ===== AtmosPOLE tour — every rule is scoped to .atmospole so it can't affect the rest of your site ===== */
+.atmospole {
+  /* dark theme (default) */
+  --ap-bg: #05080c;
+  --ap-ink: #e9eef3;
+  --ap-muted: #8a96a3;
+  --ap-accent: #ff9a1f;
+  --ap-green: #3ddc84;
+  --ap-glow: rgba(61, 220, 132, 0.6);
+  --ap-card: rgba(20, 25, 31, 0.74);
+  --ap-line: rgba(255, 255, 255, 0.1);
+  --ap-text: #b8c2cc;
+  --ap-text2: #cfd7df;
+  --ap-stage: radial-gradient(ellipse 60% 70% at 58% 45%, #132131 0%, #0a1119 45%, #05080c 80%);
+  --ap-dot: #2b3744;
+  --ap-tile: #0c121a;
+  --ap-num: #1e2a36;
+  --ap-pill: rgba(10, 16, 22, 0.75);
+  --ap-shadow: rgba(0, 0, 0, 0.45);
+  background: var(--ap-bg);
+  color: var(--ap-ink);
+  font-family: 'Inter', system-ui, sans-serif;
+  overflow-x: clip;
+  transition: background-color 0.4s, color 0.4s;
+}
+
+.atmospole[data-ap-theme="light"],
+[data-theme='light'] .atmospole {
+  --ap-bg: #ffffff;
+  --ap-ink: #0f1720;
+  --ap-muted: #5b6673;
+  --ap-accent: #c8102e;
+  --ap-green: #15803d;
+  --ap-glow: rgba(21, 128, 61, 0.35);
+  --ap-card: rgba(255, 255, 255, 0.92);
+  --ap-line: rgba(15, 23, 32, 0.1);
+  --ap-text: #334155;
+  --ap-text2: #1e293b;
+  --ap-stage: radial-gradient(ellipse 60% 70% at 58% 45%, #ffffff 0%, #f8fafc 50%, #f1f5f9 85%);
+  --ap-dot: #cbd5e1;
+  --ap-tile: #ffffff;
+  --ap-num: #dde3ea;
+  --ap-pill: rgba(255, 255, 255, 0.88);
+  --ap-shadow: rgba(15, 23, 32, 0.12);
+}
+
+.atmospole *,
+.atmospole *::before,
+.atmospole *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.atmospole .intro {
+  min-height: 50vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 80px 16px 20px;
+}
+
+.atmospole .intro h1 {
+  font-size: clamp(36px, 7vw, 84px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.atmospole .intro h1 span {
+  color: var(--ap-accent);
+}
+
+.atmospole .intro p {
+  color: var(--ap-muted);
+  margin-top: 14px;
+  max-width: 560px;
+  line-height: 1.6;
+}
+
+.atmospole .hint {
+  margin-top: 28px;
+  font-size: 13px;
+  color: var(--ap-muted);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  animation: ap-bob 1.8s ease-in-out infinite;
+}
+
+@keyframes ap-bob {
+  50% {
+    transform: translateY(6px);
+  }
+}
+
+.atmospole .tour {
+  position: relative;
+}
+
+.atmospole .stage {
+  position: sticky;
+  top: 76px !important;
+  height: calc(100vh - 76px) !important;
+  height: calc(100svh - 76px) !important;
+  overflow: hidden;
+  background: var(--ap-stage);
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform;
+}
+
+.atmospole .gl {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.atmospole .loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ap-muted);
+  font-size: 13px;
+  letter-spacing: 0.2em;
+}
+
+.atmospole svg.links {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.atmospole svg.links path {
+  fill: none;
+  stroke: var(--ap-green);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 4px var(--ap-green)) drop-shadow(0 0 10px var(--ap-glow));
+}
+
+.atmospole svg.links circle {
+  fill: var(--ap-green);
+}
+
+.atmospole svg.links circle.ring {
+  fill: none;
+  stroke: var(--ap-green);
+  stroke-width: 2;
+}
+
+.atmospole .labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.atmospole .tag {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+  transform: translateY(-50%);
+  opacity: 0;
+}
+
+.atmospole .tag::before {
+  content: "";
+  flex: none;
+  width: 28px;
+  height: 2px;
+  background: var(--ap-green);
+  box-shadow: 0 0 8px var(--ap-green);
+}
+
+.atmospole .tag.flip {
+  flex-direction: row-reverse;
+  transform: translate(-100%, -50%);
+}
+
+.atmospole .tag span {
+  padding: 6px 10px;
+  border: 1px solid var(--ap-green);
+  border-radius: 999px;
+  background: var(--ap-pill);
+  backdrop-filter: blur(6px);
+}
+
+.atmospole .cards {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.atmospole .card {
+  position: absolute;
+  left: clamp(16px, 5vw, 80px);
+  top: 50%;
+  width: min(380px, calc(100% - 32px));
+  padding: 24px 26px;
+  border: 1px solid var(--ap-line);
+  border-radius: 22px;
+  background: var(--ap-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 20px 60px var(--ap-shadow);
+  opacity: 0;
+  transform: translateY(-50%) !important;
+  transition: opacity 0.35s ease, border-color 0.35s ease, background-color 0.4s;
+  will-change: opacity;
+}
+
+.atmospole .card.on {
+  opacity: 1;
+  transform: translateY(-50%) !important;
+  border-color: color-mix(in srgb, var(--ap-green) 40%, transparent);
+}
+
+.atmospole .card .n {
+  font-size: 12px;
+  letter-spacing: 0.25em;
+  color: var(--ap-green);
+  font-weight: 600;
+}
+
+.atmospole .card h2 {
+  font-size: 28px;
+  margin: 8px 0 10px;
+  font-weight: 800;
+  color: var(--ap-ink);
+}
+
+.atmospole .card p {
+  color: var(--ap-text);
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+.atmospole .card b.before {
+  color: var(--ap-accent);
+}
+
+.atmospole .card b.after {
+  color: var(--ap-green);
+}
+
+.atmospole .card ul {
+  margin-top: 12px;
+  list-style: none;
+}
+
+.atmospole .card li {
+  font-size: 14px;
+  color: var(--ap-text2);
+  padding: 7px 0;
+  border-top: 1px solid var(--ap-line);
+  display: flex;
+  gap: 8px;
+}
+
+.atmospole .card li::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--ap-green);
+  box-shadow: 0 0 6px var(--ap-green);
+}
+
+.atmospole .dots {
+  position: absolute;
+  right: clamp(10px, 3vw, 40px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.atmospole .dots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ap-dot);
+  transition: 0.3s;
+}
+
+.atmospole .dots i.on {
+  background: var(--ap-green);
+  transform: scale(1.5);
+  box-shadow: 0 0 8px var(--ap-green);
+}
+
+.atmospole .steps {
+  position: relative;
+  margin-top: calc(-100vh + 76px);
+  margin-top: calc(-100svh + 76px);
+  pointer-events: none;
+}
+
+.atmospole .steps section {
+  height: 75vh;
+  height: 75svh;
+}
+
+@media (max-width: 900px) {
+  .atmospole .steps {
+    margin-top: calc(-100vh + 60px);
+    margin-top: calc(-100svh + 60px);
+  }
+}
+
+/* stacked layout (phones / portrait tablets): pole on top, card at the bottom */
+.atmospole .stage.stacked .card {
+  left: 16px;
+  right: 16px;
+  width: auto;
+  max-width: 560px;
+  margin: 0 auto;
+  top: auto;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  transform: none !important;
+  padding: 16px 18px;
+  border-radius: 18px;
+  transition: opacity 0.35s ease, border-color 0.35s ease, background-color 0.35s ease;
+  will-change: opacity;
+}
+
+.atmospole .stage.stacked .card.on {
+  transform: none !important;
+  opacity: 1;
+}
+
+.atmospole .stage.stacked .card h2 {
+  font-size: clamp(19px, 5.4vw, 24px);
+  margin: 6px 0;
+}
+
+.atmospole .stage.stacked .card p {
+  font-size: clamp(13px, 3.7vw, 15px);
+  line-height: 1.5;
+}
+
+.atmospole .stage.stacked .card .n {
+  font-size: 11px;
+}
+
+.atmospole .stage.stacked .card ul {
+  display: none;
+}
+
+.atmospole .stage.stacked .dots {
+  right: 8px;
+  gap: 9px;
+  transform: none;
+}
+
+.atmospole .stage.stacked .dots i {
+  width: 6px;
+  height: 6px;
+}
+
+.atmospole .stage.stacked .tag {
+  font-size: 11px;
+}
+
+.atmospole .stage.stacked .tag::before {
+  width: 14px;
+}
+
+.atmospole .stage.stacked .tag span {
+  padding: 4px 8px;
+}
+
+/* short landscape screens */
+@media (max-height: 560px) and (min-width: 600px) {
+  .atmospole .card {
+    width: min(300px, 40vw);
+    padding: 14px 16px;
+    border-radius: 16px;
+  }
+  .atmospole .card h2 {
+    font-size: 19px;
+    margin: 4px 0 6px;
+  }
+  .atmospole .card p {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .atmospole .card ul {
+    display: none;
+  }
+  .atmospole .dots {
+    gap: 7px;
+  }
+}
+
+@media (max-width: 420px) {
+  .atmospole .intro {
+    min-height: 45svh;
+    padding-top: 50px;
+  }
+}
