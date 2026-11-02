@@ -1,27 +1,27 @@
 "use client";
 
 const LIVE_METRICS = [
-  { label: "Ambient Air PM2.5", value: "125 µg/m³", status: "Unhealthy Intake", color: "text-rose-600", bg: "bg-rose-50" },
-  { label: "Treated Air PM2.5", value: "4.16 µg/m³", status: "Clean Output", color: "text-emerald-600", bg: "bg-emerald-50" },
-  { label: "Treated Air PM10", value: "3.81 µg/m³", status: "Clean Output", color: "text-emerald-600", bg: "bg-emerald-50" },
-  { label: "24-Hr Air Cleaned", value: "8,06,400 cu ft", status: "Continuous Volume", color: "text-sky-700", bg: "bg-sky-50" },
+  { label: "Ambient Air PM2.5", value: "125 µg/m³", status: "Unhealthy Intake", color: "text-rose-500", bg: "bg-rose-500/10" },
+  { label: "Treated Air PM2.5", value: "4.16 µg/m³", status: "Clean Output", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+  { label: "Treated Air PM10", value: "3.81 µg/m³", status: "Clean Output", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+  { label: "24-Hr Air Cleaned", value: "8,06,400 cu ft", status: "Continuous Volume", color: "text-sky-500", bg: "bg-sky-500/10" },
 ];
 
 export default function PlatformSection() {
   return (
-    <section id="telemetry" className="py-20 px-6 bg-slate-50 border-t border-slate-200/80">
+    <section id="telemetry" className="py-20 px-6 bg-[var(--bg-secondary)] border-t border-[var(--border-subtle)] transition-colors">
       <div className="max-w-7xl mx-auto">
         
         {/* Compact Section Header */}
         <div className="max-w-2xl mb-10 text-center sm:text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-200/60 text-slate-700 text-xs font-semibold tracking-wide mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-500/10 border border-[var(--border-subtle)] text-[var(--text-secondary)] text-xs font-semibold tracking-wide mb-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             Verified Street Telemetry
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] tracking-tight">
             Transparent Data from Sensor to Screen
           </h2>
-          <p className="text-slate-500 text-xs sm:text-sm mt-1">
+          <p className="text-[var(--text-muted)] text-xs sm:text-sm mt-1">
             Real-time telemetry streamed directly from deployed AtmosPOLE™ units every 5 minutes.
           </p>
         </div>
@@ -31,9 +31,9 @@ export default function PlatformSection() {
           {LIVE_METRICS.map((m, idx) => (
             <div
               key={idx}
-              className={`p-5 rounded-2xl border border-slate-200/80 bg-white shadow-xs card-hover`}
+              className="p-5 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-xs card-hover transition-all"
             >
-              <div className="text-[11px] font-medium text-slate-400 mb-1">{m.label}</div>
+              <div className="text-[11px] font-medium text-[var(--text-muted)] mb-1">{m.label}</div>
               <div className={`text-xl sm:text-2xl font-black ${m.color} tracking-tight font-mono mb-2`}>
                 {m.value}
               </div>
